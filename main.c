@@ -1,14 +1,9 @@
-
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
-
-//message format
-// DATA
 
 struct xplane_message_header
 {
@@ -46,7 +41,6 @@ int create_udp_socket(struct sockaddr_in *endpoint) {
 }
 
 void on_data_message(xplane_message_data *messages, int count) {
-
     for (int i = 0; i < count; i++) {
         xplane_message_data *message = messages + i * sizeof(xplane_message_data);
 
@@ -55,7 +49,6 @@ void on_data_message(xplane_message_data *messages, int count) {
             printf("dataf[%d] = %f\n", j, message->data[j]);
         }
     }
-
 }
 
 void on_packet(char *buffer, int length, struct sockaddr_in *peerEndpoint) {
@@ -74,7 +67,6 @@ void on_packet(char *buffer, int length, struct sockaddr_in *peerEndpoint) {
             xplane_message_data *data_message = data + (i * sizeof(xplane_message_data));
 
             data_message->index = (uint32_t)(*b);
-            printf("read index %d\n", *b);
             memcpy(data_message->data, b + 4, 32);
         }
 
@@ -82,7 +74,6 @@ void on_packet(char *buffer, int length, struct sockaddr_in *peerEndpoint) {
     }
 }
 
-// reader
 int main() {
     int listenPort = 49003;
     struct sockaddr_in listenEndpoint;
