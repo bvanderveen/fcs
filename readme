@@ -1,0 +1,12 @@
+This will be a flight control system for flying robots.
+
+What it does:
+
+- Receive UDP packets from X-Plane
+
+What it will do
+
+- Send UDP packets to X-Plane simulated control surfaces
+- Heading/altitude/airspeed hold autopilot
+- Fly between waypoints
+- Land airplanes :D
