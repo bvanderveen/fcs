@@ -21,6 +21,28 @@ struct xplane_message_data
 };
 typedef struct xplane_message_data xplane_message_data;
 
+enum xplane_data_index {
+    xplane_data_ail_elv_rud = 8,
+    xplane_data_angular_moments = 15,
+    xplane_data_angular_accellerations = 16,
+    xplane_data_angular_velocities = 17,
+    xplane_data_pitch_roll_heading = 18,
+    xplane_data_lat_lon_alt = 20,
+    xplane_data_throttle = 25
+};
+typedef int xplane_data_index;
+
+typedef void(*xplane_data_handler)(xplane_message_data *, int);
+
+struct xplane_context {
+    int socket;
+    struct sockaddr_in listenEndpoint;
+    struct sockaddr_in destinationEndpoint;
+    xplane_data_handler data_handler;
+};
+typedef struct xplane_context xplane_context;
+
+
 void init_udp_endpoint(struct sockaddr_in *outEndpoint, long address, int port) {
     memset(outEndpoint, 0, sizeof(struct sockaddr_in));
     outEndpoint->sin_family = AF_INET;
@@ -42,19 +64,13 @@ int create_udp_socket(struct sockaddr_in *endpoint) {
     return result;
 }
 
-void on_data_message(xplane_message_data *messages, int count) {
-    for (int i = 0; i < count; i++) {
-        xplane_message_data *message = messages + i * sizeof(xplane_message_data);
-
-        // printf("on_data_message (index = %d) ", message->index);
-        // for (int j = 0; j < 8; j++) {
-        //     printf("%f ", message->data[j]);
-        // }
-        // printf("\n");
-    }
+void init_xplane_context(xplane_context *context, int listenPort, int destinationPort) {
+    init_udp_endpoint(&context->listenEndpoint, INADDR_ANY, listenPort);
+    init_udp_endpoint(&context->destinationEndpoint, INADDR_ANY, destinationPort);
+    context->socket = create_udp_socket(&context->listenEndpoint);
 }
 
-void on_packet(char *buffer, int length, struct sockaddr_in *peerEndpoint) {
+void on_packet(xplane_context *context, char *buffer, int length, struct sockaddr_in *peerEndpoint) {
     //printf("on_packet %s:%d - %d bytes\n", inet_ntoa(peerEndpoint->sin_addr), ntohs(peerEndpoint->sin_port), length);
     xplane_message_header *header;
     header = (xplane_message_header *)buffer;
@@ -73,11 +89,39 @@ void on_packet(char *buffer, int length, struct sockaddr_in *peerEndpoint) {
             memcpy(data_message->data, b + 4, 32);
         }
 
-        on_data_message(data, data_count);
+        context->data_handler(data, data_count);
     }
 }
 
-void write_xplane_data(int socket, struct sockaddr_in *endpoint, xplane_message_data *messages, int count) {
+void xplane_context_read(xplane_context *context) {
+    int bufferLength = 4 * 1024;
+    char buffer[bufferLength];
+    struct sockaddr_in peerEndpoint;
+    size_t peerEndpointLength = sizeof(peerEndpoint);
+
+    int bytesRead = recvfrom(context->socket, buffer, bufferLength, 0, (struct sockaddr *)&peerEndpoint, (socklen_t *)&peerEndpointLength);
+
+    if (bytesRead == -1) {
+        printf("recvfrom() failed: %d", errno);
+        return;
+    }
+
+    on_packet(context, buffer, bytesRead, &peerEndpoint);
+}
+
+void on_data_message(xplane_message_data *messages, int count) {
+    for (int i = 0; i < count; i++) {
+        xplane_message_data *message = messages + i * sizeof(xplane_message_data);
+
+        printf("on_data_message (index = %d) ", message->index);
+        for (int j = 0; j < 8; j++) {
+            printf("%f ", message->data[j]);
+        }
+        printf("\n");
+    }
+}
+
+void xplane_write_data(xplane_context *context, xplane_message_data *messages, int count) {
 
     int bufferLength = sizeof(xplane_message_data) * count + 5;
     char *buffer = malloc(bufferLength);
@@ -104,7 +148,7 @@ void write_xplane_data(int socket, struct sockaddr_in *endpoint, xplane_message_
     }
     printf("\n");
 
-    int bytesSent = sendto(socket, buffer, bufferLength, 0, (struct sockaddr *)endpoint, sizeof(struct sockaddr_in));
+    int bytesSent = sendto(context->socket, buffer, bufferLength, 0, (struct sockaddr *)&context->destinationEndpoint, sizeof(struct sockaddr_in));
 
     if (bytesSent < 0)
         printf("sendto() failed: %d", errno);
@@ -112,37 +156,18 @@ void write_xplane_data(int socket, struct sockaddr_in *endpoint, xplane_message_
     free(buffer);
 }
 
-enum xplane_data_index {
-    xplane_data_throttle = 25
-};
-typedef int xplane_data_index;
+
 
 int main() {
-    int listenPort = 49003;
-    struct sockaddr_in listenEndpoint;
-
-    int destinationPort = 49000;
-    struct sockaddr_in destinationEndpoint;
-
-    init_udp_endpoint(&listenEndpoint, INADDR_ANY, listenPort);
-    int listenSocket = create_udp_socket(&listenEndpoint);
-
-    int bufferLength = 4 * 1024;
-    char buffer[bufferLength];
+    xplane_context xpctx;
+    init_xplane_context(&xpctx, 49003, 49000);
+    xpctx.data_handler = &on_data_message;
 
     float throttle = 0;
 
     while (1) {
-        struct sockaddr_in peerEndpoint;
-        size_t peerEndpointLength = sizeof(peerEndpoint);
-        int bytesRead = recvfrom(listenSocket, buffer, bufferLength, 0, (struct sockaddr *)&peerEndpoint, (socklen_t *)&peerEndpointLength);
 
-        if (bytesRead == -1) {
-            printf("recvfrom failed");
-            break;
-        }
-
-        on_packet(buffer, bytesRead, &peerEndpoint);
+        xplane_context_read(&xpctx);
 
         xplane_message_data data;
         data.index = xplane_data_throttle;
@@ -155,7 +180,7 @@ int main() {
         data.data[6] = 0;
         data.data[7] = throttle;
 
-        write_xplane_data(listenSocket, &destinationEndpoint, &data, 1);
+        xplane_write_data(&xpctx, &data, 1);
 
         throttle += .01;
 
