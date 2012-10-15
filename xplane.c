@@ -8,7 +8,6 @@
 #include <ctype.h>
 #include <errno.h>
 
-
 void init_udp_endpoint(struct sockaddr_in *outEndpoint, long address, int port) {
     memset(outEndpoint, 0, sizeof(struct sockaddr_in));
     outEndpoint->sin_family = AF_INET;
@@ -55,7 +54,7 @@ void on_packet(xplane_context *context, char *buffer, int length, struct sockadd
             memcpy(data_message->data, b + 4, 32);
         }
 
-        context->data_handler(data, data_count);
+        context->data_handler(context, data, data_count);
     }
 }
 
@@ -74,8 +73,6 @@ void xplane_context_read(xplane_context *context) {
 
     on_packet(context, buffer, bytesRead, &peerEndpoint);
 }
-
-
 
 void xplane_write_data(xplane_context *context, xplane_message_data *messages, int count) {
 

@@ -29,13 +29,12 @@ enum xplane_data_index {
 };
 typedef int xplane_data_index;
 
-typedef void(*xplane_data_handler)(xplane_message_data *, int);
-
 struct xplane_context {
     int socket;
     struct sockaddr_in listenEndpoint;
     struct sockaddr_in destinationEndpoint;
-    xplane_data_handler data_handler;
+    void(*data_handler)(struct xplane_context *, xplane_message_data *, int);
+    void *context;
 };
 typedef struct xplane_context xplane_context;
 
