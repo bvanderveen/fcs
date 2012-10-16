@@ -55,6 +55,7 @@ void on_packet(xplane_context *context, char *buffer, int length, struct sockadd
         }
 
         context->data_handler(context, data, data_count);
+        free(data);
     }
 }
 

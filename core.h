@@ -39,6 +39,8 @@ struct core_context {
     
     float desiredHeading;
     pid_controller rudderController;
+    float desiredRoll;
+    pid_controller aileronController;
 };
 typedef struct core_context core_context;
 

@@ -24,6 +24,8 @@ void core_xplane_driver_write_effectors(core_xplane_driver *driver) {
     messages[0].data[6] = 0;
     messages[0].data[7] = 0;
 
+    printf("elv = %f, ail = %f, rud = %f\n", messages[0].data[0], messages[0].data[1], messages[0].data[2]);
+
     messages[1].index = xplane_data_throttle;
     messages[1].data[0] = driver->core.effector_state.throttle;
     messages[1].data[1] = 0;
@@ -68,11 +70,18 @@ int main() {
     core_xplane_driver driver;
     memset(&driver, 0, sizeof(driver));
     driver.xplane.context = &driver;
+
     driver.core.desiredHeading = 81.15;
     driver.core.rudderController.setpoint = 0;
-    driver.core.rudderController.p = .15;
+    driver.core.rudderController.p = .1;
     driver.core.rudderController.i = 0;
     driver.core.rudderController.d = .3;
+
+    driver.core.desiredRoll = 0;
+    driver.core.aileronController.setpoint = 0;
+    driver.core.aileronController.p = .1;
+    driver.core.aileronController.i = 0;
+    driver.core.aileronController.d = .3;
 
     init_xplane_context(&driver.xplane, 49003, 49000);
     driver.xplane.data_handler = &on_data_message;
