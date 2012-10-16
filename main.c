@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
+#include <sys/param.h>
 
 struct core_xplane_driver {
     xplane_context xplane;
@@ -14,8 +15,8 @@ void core_xplane_driver_write_effectors(core_xplane_driver *driver) {
     xplane_message_data messages[2];
 
     messages[0].index = xplane_data_ail_elv_rud;
-    messages[0].data[0] = driver->core.effector_state.ail;
-    messages[0].data[1] = driver->core.effector_state.elv;
+    messages[0].data[0] = driver->core.effector_state.elv;
+    messages[0].data[1] = driver->core.effector_state.ail;
     messages[0].data[2] = driver->core.effector_state.rud;
     messages[0].data[3] = 0;
     messages[0].data[4] = 0;
@@ -37,16 +38,10 @@ void core_xplane_driver_write_effectors(core_xplane_driver *driver) {
 }
 
 void on_data_message(xplane_context *xplane, xplane_message_data *messages, int count) {
+    core_xplane_driver *driver = (core_xplane_driver *)xplane->context;
+
     for (int i = 0; i < count; i++) {
         xplane_message_data *message = messages + i * sizeof(xplane_message_data);
-
-        printf("on_data_message (index = %d) ", message->index);
-        for (int j = 0; j < 8; j++) {
-            printf("%f ", message->data[j]);
-        }
-        printf("\n");
-
-        core_xplane_driver *driver = (core_xplane_driver *)xplane->context;
 
         switch (message->index) {
             case xplane_data_pitch_roll_heading:
@@ -61,6 +56,7 @@ void on_data_message(xplane_context *xplane, xplane_message_data *messages, int 
                 break;
         }
     }
+    //core_sensor_state_print(&driver->core.sensor_state);
 }
 
 int timeval_subtract(struct timeval *t2, struct timeval *t1)
@@ -72,6 +68,11 @@ int main() {
     core_xplane_driver driver;
     memset(&driver, 0, sizeof(driver));
     driver.xplane.context = &driver;
+    driver.core.desiredHeading = 81.15;
+    driver.core.rudderController.setpoint = 0;
+    driver.core.rudderController.p = .15;
+    driver.core.rudderController.i = 0;
+    driver.core.rudderController.d = .3;
 
     init_xplane_context(&driver.xplane, 49003, 49000);
     driver.xplane.data_handler = &on_data_message;

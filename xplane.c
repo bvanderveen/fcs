@@ -95,12 +95,6 @@ void xplane_write_data(xplane_context *context, xplane_message_data *messages, i
         }
     }
 
-    for (int i = 0; i < bufferLength; i++)
-    {
-      printf("%d ", (int)(buffer[i]));
-    }
-    printf("\n");
-
     int bytesSent = sendto(context->socket, buffer, bufferLength, 0, (struct sockaddr *)&context->destinationEndpoint, sizeof(struct sockaddr_in));
 
     if (bytesSent < 0)
