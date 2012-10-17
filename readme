@@ -4,10 +4,13 @@ What it does:
 
 - Receives UDP packets from X-Plane
 - Sends UDP packets to X-Plane simulated control surfaces
-- Heading hold with rudder
+- Heading hold/follow
+- coordinated turns
 
 What it will do:
 
 - altitude/airspeed hold autopilot
+- ground tracking
 - Fly between waypoints
-- Land airplanes :D
+- Land :D
+
