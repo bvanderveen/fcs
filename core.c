@@ -46,9 +46,8 @@ void core_update(core_context *context, float dt) {
         originalHeading = context->sensor_state.heading;
         context->desiredHeading = originalHeading;
     }
-    acc += .0000000002 * dt;
-    context->desiredHeading = originalHeading + 70 * sin(acc);
-
+    acc += .0000000001 * dt;
+    context->desiredHeading = originalHeading + 140 * sin(acc);
 
     // set pitch
     float pitchError = pitch_error(context->sensor_state.pitch, context->desiredPitch);

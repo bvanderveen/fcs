@@ -2,10 +2,10 @@ This will be a flight control system for flying robots.
 
 What it does:
 
-- Receives UDP packets from X-Plane
-- Sends UDP packets to X-Plane simulated control surfaces
+- Receives UDP packets from X-Plane containing position, accelleration, and attitude data
+- Sends UDP packets to X-Plane containing aileron, elevator, rudder, throttle data
 - Heading hold/follow
-- coordinated turns
+- Automatically coordinated turns
 
 What it will do:
 
