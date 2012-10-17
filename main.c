@@ -76,8 +76,6 @@ int main() {
     memset(&driver, 0, sizeof(driver));
     driver.xplane.context = &driver;
 
-    driver.core.maxRoll = 2;
-
     driver.core.waypoint0.lat = 47.258842;
     driver.core.waypoint0.lon = 11.331075;
     driver.core.waypoint0.alt = 1919;
