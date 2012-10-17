@@ -38,51 +38,35 @@ void core_update(core_context *context, float dt) {
     if (context->effector_state.throttle < 1)
         context->effector_state.throttle += .01;
 
+    // some stupid basic mission that is basically to swerve back and forth from starting heading
     static int setHeading = 0;
     static float originalHeading;
     static float acc = 0;
-
     if (!setHeading++) {
         originalHeading = context->sensor_state.heading;
         context->desiredHeading = originalHeading;
     }
-
-    //acc += .00000000003 * dt;
-    //context->desiredHeading = originalHeading + 180 * sin(acc);
-    // estimate wind.
-    // draw line between waypoints. this is commanded path.
-    // calculate vector to destination point. this is naive path
-    // calculate vector normal to commanded path. rate-limited steering vector
+    acc += .0000000002 * dt;
+    context->desiredHeading = originalHeading + 70 * sin(acc);
 
 
-    //waypoint0
-
-
+    // set pitch
     float pitchError = pitch_error(context->sensor_state.pitch, context->desiredPitch);
     pid_update(&context->elevatorController, pitchError, dt);
     context->effector_state.elv = -context->elevatorController.output;
 
-    // control heading with bank angle.
+    // heading control is a PID cascade controller. 
+    // outer loop takes heading error and commands bank angle 
     float bearingError = heading_error(context->sensor_state.heading, context->desiredHeading);
-
-    // reasonable limits. don't break your neck following the carrot.
-    float maxBearingError = context->maxBearingError;
-    bearingError = (bearingError > maxBearingError) ? 
-        maxBearingError : 
-        (bearingError < -maxBearingError ? 
-            -maxBearingError : 
-            bearingError);
-    printf("desiredHeading = %f, error = %f\n", context->desiredHeading, bearingError);
-
     pid_update(&context->aileronController, bearingError, dt);
-
-    context->aileronController2.setpoint = 0;
+    // inner loop takes bank angle and commands elevator deflection
     float roll_error = -context->aileronController.output - context->sensor_state.roll;
-    printf("commanded roll = %f roll error = %f\n", -context->aileronController.output, roll_error);
-    pid_update(&context->aileronController2, -context->aileronController.output - context->sensor_state.roll, dt);
+    pid_update(&context->aileronController2, roll_error, dt);
     context->effector_state.ail = -context->aileronController2.output;
 
-    printf("lateral accelleration = %f\n", context->sensor_state.aB);
+    // coordinate the turn by zeroing lateral G's
     pid_update(&context->rudderController, context->sensor_state.aB, dt);
-    context->effector_state.rud = -context->rudderController.output;
+    context->effector_state.rud = context->rudderController.output;
+    printf("aB = %f\n", context->sensor_state.aB);
+
 };

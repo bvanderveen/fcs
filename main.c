@@ -76,7 +76,7 @@ int main() {
     memset(&driver, 0, sizeof(driver));
     driver.xplane.context = &driver;
 
-    driver.core.maxBearingError = 10;
+    driver.core.maxRoll = 2;
 
     driver.core.waypoint0.lat = 47.258842;
     driver.core.waypoint0.lon = 11.331075;
@@ -88,19 +88,19 @@ int main() {
 
     driver.core.desiredHeading = 81.15;
     //driver.core.desiredHeading = 270;
-    driver.core.rudderController.p = 1;
-    driver.core.rudderController.i = .0;
-    driver.core.rudderController.d = 4;
+    driver.core.rudderController.p = .000000001;
+    driver.core.rudderController.i = .0000000015;
+    driver.core.rudderController.d = 110;
 
-    driver.core.aileronController.p = 4;
-    driver.core.aileronController.i = .000000002;
+    driver.core.aileronController.p = 2;
+    driver.core.aileronController.i = .00000000001;
     driver.core.aileronController.d = 1;
 
     driver.core.aileronController2.p = .1;
     driver.core.aileronController2.i = .0;
     driver.core.aileronController2.d = .1;
 
-    driver.core.desiredPitch = -1;
+    driver.core.desiredPitch = 0;
     driver.core.elevatorController.p = .05;
     driver.core.elevatorController.i = 0;
     driver.core.elevatorController.d = 0;
