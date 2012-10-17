@@ -28,9 +28,9 @@ void core_xplane_driver_write_effectors(core_xplane_driver *driver) {
 
     messages[1].index = xplane_data_throttle;
     messages[1].data[0] = driver->core.effector_state.throttle;
-    messages[1].data[1] = 0;
-    messages[1].data[2] = 0;
-    messages[1].data[3] = 0;
+    messages[1].data[1] = driver->core.effector_state.throttle;
+    messages[1].data[2] = driver->core.effector_state.throttle;
+    messages[1].data[3] = driver->core.effector_state.throttle;
     messages[1].data[4] = 0;
     messages[1].data[5] = 0;
     messages[1].data[6] = 0;
@@ -56,9 +56,14 @@ void on_data_message(xplane_context *xplane, xplane_message_data *messages, int 
                 driver->core.sensor_state.lon = message->data[1];
                 driver->core.sensor_state.alt = message->data[2];
                 break;
+            case xplane_data_mach_vvi_g:
+                driver->core.sensor_state.aN = message->data[4];
+                driver->core.sensor_state.aT = message->data[5];
+                driver->core.sensor_state.aB = message->data[6];
+                break;
         }
     }
-    //core_sensor_state_print(&driver->core.sensor_state);
+    core_sensor_state_print(&driver->core.sensor_state);
 }
 
 int timeval_subtract(struct timeval *t2, struct timeval *t1)
@@ -71,17 +76,34 @@ int main() {
     memset(&driver, 0, sizeof(driver));
     driver.xplane.context = &driver;
 
-    driver.core.desiredHeading = 81.15;
-    driver.core.rudderController.setpoint = 0;
-    driver.core.rudderController.p = .1;
-    driver.core.rudderController.i = 0;
-    driver.core.rudderController.d = .3;
+    driver.core.maxBearingError = 10;
 
-    driver.core.desiredRoll = 0;
-    driver.core.aileronController.setpoint = 0;
-    driver.core.aileronController.p = .1;
-    driver.core.aileronController.i = 0;
-    driver.core.aileronController.d = .3;
+    driver.core.waypoint0.lat = 47.258842;
+    driver.core.waypoint0.lon = 11.331075;
+    driver.core.waypoint0.alt = 1919;
+
+    driver.core.waypoint1.lat = 47.261608;
+    driver.core.waypoint1.lon = 11.356864;
+    driver.core.waypoint1.alt = 1889;
+
+    driver.core.desiredHeading = 81.15;
+    //driver.core.desiredHeading = 270;
+    driver.core.rudderController.p = 1;
+    driver.core.rudderController.i = .0;
+    driver.core.rudderController.d = 4;
+
+    driver.core.aileronController.p = 4;
+    driver.core.aileronController.i = .000000002;
+    driver.core.aileronController.d = 1;
+
+    driver.core.aileronController2.p = .1;
+    driver.core.aileronController2.i = .0;
+    driver.core.aileronController2.d = .1;
+
+    driver.core.desiredPitch = -1;
+    driver.core.elevatorController.p = .05;
+    driver.core.elevatorController.i = 0;
+    driver.core.elevatorController.d = 0;
 
     init_xplane_context(&driver.xplane, 49003, 49000);
     driver.xplane.data_handler = &on_data_message;

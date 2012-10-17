@@ -4,9 +4,11 @@ struct core_sensor_state {
     lat, 
     lon,
     alt,
+    aT, aN, aB,
     pitch,
     roll,
-    heading;
+    heading
+    ;
 };
 typedef struct core_sensor_state core_sensor_state;
 
@@ -37,10 +39,16 @@ struct core_context {
     core_sensor_state sensor_state;
     core_effector_state effector_state;
     
+    float maxBearingError;
     float desiredHeading;
     pid_controller rudderController;
-    float desiredRoll;
     pid_controller aileronController;
+    pid_controller aileronController2;
+    float desiredPitch;
+    pid_controller elevatorController;
+
+    core_sensor_state waypoint0;
+    core_sensor_state waypoint1;
 };
 typedef struct core_context core_context;
 
