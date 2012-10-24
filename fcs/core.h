@@ -1,5 +1,5 @@
-#ifndef __CORE_H
-#define __CORE_H
+#ifndef __FCS_CORE
+#define __FCS_CORE
 
 struct core_sensor_state {
     float 

@@ -1,8 +1,8 @@
 #include "core.h"
 #include "pid_controller.h"
 
-#ifndef __HEADING_H
-#define __HEADING_H
+#ifndef __FCS_HEADING
+#define __FCS_HEADING
 
 struct core_heading_setting {
     float desiredHeading;

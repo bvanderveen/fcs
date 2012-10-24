@@ -1,8 +1,8 @@
 #include "core.h"
 #include "pid_controller.h"
 
-#ifndef __CORE_ENERGY_H
-#define __CORE_ENERGY_H
+#ifndef __FCS_ENERGY
+#define __FCS_ENERGY
 
 struct core_pitch_setting {
     float desiredPitch;

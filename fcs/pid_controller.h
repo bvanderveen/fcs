@@ -1,5 +1,5 @@
-#ifndef __PID_CONTROLLER_H
-#define __PID_CONTROLLER_H
+#ifndef __FCS_PID_CONTROLLER
+#define __FCS_PID_CONTROLLER
 
 struct pid_controller {
     float 

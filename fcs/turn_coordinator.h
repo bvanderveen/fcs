@@ -1,8 +1,8 @@
 #include "pid_controller.h"
 #include "core.h"
 
-#ifndef __CORE_TURN_COORDINATOR_H
-#define __CORE_TURN_COORDINATOR_H
+#ifndef __FCS_TURN_COORDINATOR
+#define __FCS_TURN_COORDINATOR
 
 struct core_turn_coordinator {
     pid_controller rudderController;
