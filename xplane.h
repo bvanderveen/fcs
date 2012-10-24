@@ -1,8 +1,8 @@
 
 #include <arpa/inet.h>
 
-#ifndef XPLANE_H
-#define XPLANE_H
+#ifndef __XPLANE_H
+#define __XPLANE_H
 
 struct xplane_message_header
 {

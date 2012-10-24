@@ -1,3 +1,5 @@
+#ifndef __CORE_H
+#define __CORE_H
 
 struct core_sensor_state {
     float 
@@ -7,8 +9,7 @@ struct core_sensor_state {
     aT, aN, aB,
     pitch,
     roll,
-    heading
-    ;
+    heading;
 };
 typedef struct core_sensor_state core_sensor_state;
 
@@ -23,33 +24,24 @@ struct core_effector_state {
 };
 typedef struct core_effector_state core_effector_state;
 
-struct pid_controller {
-    float 
-    setpoint,
-    output,
-    error,
-    integral,
-    p, i, d;
-};
-typedef struct pid_controller pid_controller;
+// struct core_path {
+//     core_point *points;
+//     int count;
+// };
+// typedef struct core_path core_path;
 
-void pid_update(pid_controller *controller, float feedback, float dt);
+// struct core_point {
+//     float
+//     lat,
+//     lon;
+// };
+// typedef struct core_point core_point;
 
 struct core_context {
     core_sensor_state sensor_state;
     core_effector_state effector_state;
-    
-    float maxBearingError;
-    float desiredHeading;
-    pid_controller rudderController;
-    pid_controller aileronController;
-    pid_controller aileronController2;
-    float desiredPitch;
-    pid_controller elevatorController;
-
-    core_sensor_state waypoint0;
-    core_sensor_state waypoint1;
 };
 typedef struct core_context core_context;
 
-void core_update(core_context *context, float dt);
+
+#endif

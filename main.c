@@ -1,5 +1,6 @@
-#include "xplane.h"
 #include "core.h"
+#include "xplane.h"
+#include "config.h"
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
@@ -7,6 +8,7 @@
 
 struct core_xplane_driver {
     xplane_context xplane;
+    core_config config;
     core_context core;
 };
 typedef struct core_xplane_driver core_xplane_driver;
@@ -76,32 +78,7 @@ int main() {
     memset(&driver, 0, sizeof(driver));
     driver.xplane.context = &driver;
 
-    driver.core.waypoint0.lat = 47.258842;
-    driver.core.waypoint0.lon = 11.331075;
-    driver.core.waypoint0.alt = 1919;
-
-    driver.core.waypoint1.lat = 47.261608;
-    driver.core.waypoint1.lon = 11.356864;
-    driver.core.waypoint1.alt = 1889;
-
-    driver.core.desiredHeading = 81.15;
-    //driver.core.desiredHeading = 270;
-    driver.core.rudderController.p = .000000001;
-    driver.core.rudderController.i = .0000000015;
-    driver.core.rudderController.d = 110;
-
-    driver.core.aileronController.p = 2;
-    driver.core.aileronController.i = .00000000001;
-    driver.core.aileronController.d = 1;
-
-    driver.core.aileronController2.p = .1;
-    driver.core.aileronController2.i = .0;
-    driver.core.aileronController2.d = .1;
-
-    driver.core.desiredPitch = 0;
-    driver.core.elevatorController.p = .05;
-    driver.core.elevatorController.i = 0;
-    driver.core.elevatorController.d = 0;
+    init_config(&driver.config);
 
     init_xplane_context(&driver.xplane, 49003, 49000);
     driver.xplane.data_handler = &on_data_message;
@@ -117,7 +94,7 @@ int main() {
 
         float dt = 1000 * timeval_subtract(&t1, &t0);
 
-        core_update(&driver.core, dt);
+        run_config(&driver.config, &driver.core, dt);
 
         core_xplane_driver_write_effectors(&driver);
 
