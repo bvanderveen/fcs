@@ -1,13 +1,8 @@
 default: 
-	gcc -g -std=c99 -o fcs \
+	gcc -g -std=c99 -o fcs.o \
 	main.c \
-	core.c \
-	energy.c \
-	pid_controller.c \
-	turn_coordinator.c \
-	heading.c \
-	config.c \
+	fcs/*.c \
 	xplane.c
 
 run: default
-	./fcs
+	./fcs.o

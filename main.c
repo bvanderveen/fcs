@@ -1,6 +1,6 @@
-#include "core.h"
 #include "xplane.h"
-#include "config.h"
+#include "fcs/core.h"
+#include "fcs/config.h"
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
