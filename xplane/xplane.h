@@ -19,6 +19,7 @@ struct xplane_message_data
 typedef struct xplane_message_data xplane_message_data;
 
 enum xplane_data_index {
+    xplane_data_speeds = 3,
     xplane_data_mach_vvi_g = 4,
     xplane_data_ail_elv_rud = 8,
     xplane_data_angular_moments = 15,
@@ -26,6 +27,7 @@ enum xplane_data_index {
     xplane_data_angular_velocities = 17,
     xplane_data_pitch_roll_heading = 18,
     xplane_data_lat_lon_alt = 20,
+    xplane_data_loc_vel_dist = 21,
     xplane_data_throttle = 25
 };
 typedef int xplane_data_index;

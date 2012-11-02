@@ -91,7 +91,16 @@ void xplane_write_data(xplane_context *context, xplane_message_data *messages, i
         b += 4;
 
         for (int j = 0; j < 8; j++) {
-            memcpy(b, &message.data[j], sizeof(float));
+            float value = message.data[j];
+            
+            // xplane seems to crash if it gets NaN
+            if (value != value) {
+                printf("got NaN, ignoring\n");
+                value = 0;
+
+            }
+
+            memcpy(b, &value, sizeof(float));
             b += sizeof(float);
         }
     }

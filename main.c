@@ -41,6 +41,20 @@ void core_xplane_driver_write_effectors(core_xplane_driver *driver) {
     xplane_write_data(&driver->xplane, messages, 2);
 }
 
+void core_xplane_driver_write_initial_state(core_xplane_driver *driver) {
+    xplane_message_data messages[2] = {
+        { .index = xplane_data_loc_vel_dist, .data = { 
+            -1280, -900, 900, 
+            50, 120, 0, 
+            //0, 0, 0,
+            -999, -999 } },
+        { .index = xplane_data_pitch_roll_heading, .data = {
+            30.0, 30.0, 18.0,
+            -999, -999, -999, -999, -999 } }
+    };
+    xplane_write_data(&driver->xplane, messages, 3);
+}
+
 void on_data_message(xplane_context *xplane, xplane_message_data *messages, int count) {
     core_xplane_driver *driver = (core_xplane_driver *)xplane->context;
 
@@ -65,7 +79,7 @@ void on_data_message(xplane_context *xplane, xplane_message_data *messages, int 
                 break;
         }
     }
-    core_sensor_state_print(&driver->core.sensor_state);
+    //core_sensor_state_print(&driver->core.sensor_state);
 }
 
 int timeval_subtract(struct timeval *t2, struct timeval *t1)
@@ -83,10 +97,13 @@ int main() {
     init_xplane_context(&driver.xplane, 49003, 49000);
     driver.xplane.data_handler = &on_data_message;
 
+    core_xplane_driver_write_initial_state(&driver);
+
     struct timeval t0;
     gettimeofday(&t0, NULL);
 
     while (1) {
+        printf("\n");
         xplane_context_read(&driver.xplane);
 
         struct timeval t1;
