@@ -6,45 +6,31 @@
 #define EARTH_RADIUS (6373.0)
 
 float course_sigma(fcs_course_setting *setting, float cross_track_error) {
-    //return atan(setting->intercept_gain * cross_track_error /) / (M_PI/2) * TO_RADIANS(setting->intercept_angle);
     float exponent = expf(-1 * setting->intercept_gain * cross_track_error / 2);
     return TO_RADIANS(setting->intercept_angle) * ((exponent - 1) / (exponent + 1));
 }
 
 float course_sigma_derivative(fcs_course_setting *setting, float cross_track_error) {
     float exponent = expf(-1 * setting->intercept_gain * cross_track_error / 2);
-    printf("exponent %f\n", exponent);
     float exponent_plus_1 = exponent + 1;
     return -1 * setting->intercept_gain * TO_RADIANS(setting->intercept_angle) * exponent / (exponent_plus_1 * exponent_plus_1);
 }
 
-float heading_between(geopoint *p0, geopoint *p1) {
-    // tan(angle) = ∂lat / ∂lon
-    geopoint r;
-    difference(p0, p1, &r);
-    float result = atan(TO_RADIANS(r.lon) / TO_RADIANS(r.lat)) + M_PI;
-    // if (result > M_PI_2)
-    //     result -= M_2_PI;
-    // if (result < 0)
-    //     result += M_2_PI;
-    return result;
-}
-
-float course_change(fcs_course_setting *setting, float course_error, float cross_track_error, float dt) {
+float course_change(fcs_course_setting *setting, float relative_course, float cross_track_error, float dt) {
     float sigma = course_sigma(setting, cross_track_error);
-    float error = sigma - course_error;
-    printf("course_error %f\n", TO_DEGREES(course_error));
+    float error = sigma - relative_course;
+    printf("relative_course %f\n", TO_DEGREES(relative_course));
     printf("sigma %f\n", TO_DEGREES(sigma));
     printf("error %f\n", TO_DEGREES(error));
     setting->course_integral += error * dt;
     float sigma_derivative = course_sigma_derivative(setting, cross_track_error);
     printf("sigma_derivative %f\n", sigma_derivative);
-    float sin_course_error = sin(course_error);
-    printf("sin(course_error) %f\n", sin_course_error);
+    float sin_relative_course = sin(relative_course);
+    printf("sin(relative_course) %f\n", sin_relative_course);
 
     float p = setting->course_p * error;
     float i = setting->course_i * setting->course_integral;
-    float d = sigma_derivative * sin_course_error;
+    float d = sigma_derivative * sin_relative_course;
 
     printf("p = %f\n", p);
     printf("i = %f\n", i);
@@ -87,32 +73,22 @@ float haversine_distance_between(geopoint *p0, geopoint *p1) {
 }
 
 float cross_track_distance(geopoint *p0, geopoint *p1, geopoint *r) {
-    // printf("p0 "); geopoint_print(p0);
-    // printf("p1 "); geopoint_print(p1);
-    // printf("r  "); geopoint_print(r);
     float position_bearing = initial_bearing_between(p0, r);
     float waypoint_bearing = initial_bearing_between(p0, p1);
     float hav_dist = haversine_distance_between(p0, r);
-    // printf("position bearing %f, %f\n", position_bearing, TO_DEGREES(position_bearing));
-    // printf("waypoint bearing %f, %f\n", waypoint_bearing, TO_DEGREES(waypoint_bearing));
-    // printf("haversine dist   %f\n", hav_dist);
     return asin(sin(hav_dist / EARTH_RADIUS) * sin(position_bearing - waypoint_bearing)) * EARTH_RADIUS;
 }
 
-float heading_error(float h0, float h1) {
+float relative_bearing(float h0, float h1) {
     float a = h1 - h0;
-    printf("a %f\n", TO_DEGREES(a));
     float result = a + ((a > M_PI) ? -(M_PI * 2) : ((a < -M_PI) ? (M_PI * 2) : 0.0));
-    printf("result %f\n", TO_DEGREES(result));
     return result;
 }
 
-void follow_segment_2(core_context *context, fcs_course_setting *setting, geopoint *p0, geopoint *p1, geopoint *r, float dt) {
+void follow_segment(core_context *context, fcs_course_setting *setting, geopoint *p0, geopoint *p1, geopoint *r, float dt) {
     float current_course = TO_RADIANS(context->sensor_state.heading);
-
     float desired_course = initial_bearing_between(p0, p1);
-
-    float course_error = heading_error(current_course, desired_course);
+    float relative_course = relative_bearing(current_course, desired_course);
 
     float cross_track_error = cross_track_distance(p0, p1, r);
 
@@ -120,7 +96,7 @@ void follow_segment_2(core_context *context, fcs_course_setting *setting, geopoi
     printf("current_course (deg) = %f\n", TO_DEGREES(current_course));
     printf("desired_course (deg) = %f\n", TO_DEGREES(desired_course));
 
-    float course_signal = course_change(setting, -course_error, cross_track_error, dt);
+    float course_signal = course_change(setting, -relative_course, cross_track_error, dt);
         ///* + d_desired_course / dt */;
 
     printf("course_signal (deg) = %f\n", TO_DEGREES(course_signal));
@@ -166,10 +142,6 @@ void core_course_setting_update(core_context *context, void *course_setting, flo
     printf("current_waypoint_index %d\n", setting->current_waypoint_index);
     printf("previous_waypoint_index %d\n", previous_waypoint_index);
 
-    // printf("previous_waypoint "); geopoint_print(&previous_waypoint);
-    // printf("current_waypoint "); geopoint_print(&current_waypoint);
-    // printf("current_position "); geopoint_print(&current_position);
-
     // fly course
-    follow_segment_2(context, course_setting, &previous_waypoint, &current_waypoint, &current_position, dt);
+    follow_segment(context, course_setting, &previous_waypoint, &current_waypoint, &current_position, dt);
 }
