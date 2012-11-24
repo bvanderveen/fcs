@@ -19,24 +19,22 @@ float course_sigma_derivative(fcs_course_setting *setting, float cross_track_err
 float course_change(fcs_course_setting *setting, float relative_course, float cross_track_error, float dt) {
     float sigma = course_sigma(setting, cross_track_error);
     float error = sigma - relative_course;
-    printf("relative_course %f\n", TO_DEGREES(relative_course));
-    printf("sigma %f\n", TO_DEGREES(sigma));
-    printf("error %f\n", TO_DEGREES(error));
     setting->course_integral += error * dt;
     float sigma_derivative = course_sigma_derivative(setting, cross_track_error);
-    printf("sigma_derivative %f\n", sigma_derivative);
     float sin_relative_course = sin(relative_course);
-    printf("sin(relative_course) %f\n", sin_relative_course);
-
     float p = setting->course_p * error;
     float i = setting->course_i * setting->course_integral;
     float d = sigma_derivative * sin_relative_course;
+    float result = p + i + d;
 
+    printf("relative_course %f\n", TO_DEGREES(relative_course));
+    printf("sigma %f\n", TO_DEGREES(sigma));
+    printf("error %f\n", TO_DEGREES(error));
+    printf("sigma_derivative %f\n", sigma_derivative);
+    printf("sin(relative_course) %f\n", sin_relative_course);
     printf("p = %f\n", p);
     printf("i = %f\n", i);
     printf("d = %f\n", d);
-
-    float result = p + i + d;
 
     return result;
 }
@@ -79,15 +77,17 @@ float cross_track_distance(geopoint *p0, geopoint *p1, geopoint *r) {
     return asin(sin(hav_dist / EARTH_RADIUS) * sin(position_bearing - waypoint_bearing)) * EARTH_RADIUS;
 }
 
+float normalize_bearing(float a) {
+    return a + ((a > M_PI) ? -(M_PI * 2) : ((a < -M_PI) ? (M_PI * 2) : 0.0));
+}
+
 float relative_bearing(float h0, float h1) {
-    float a = h1 - h0;
-    float result = a + ((a > M_PI) ? -(M_PI * 2) : ((a < -M_PI) ? (M_PI * 2) : 0.0));
-    return result;
+    return normalize_bearing(h1 - h0);
 }
 
 void follow_segment(core_context *context, fcs_course_setting *setting, geopoint *p0, geopoint *p1, geopoint *r, float dt) {
     float current_course = TO_RADIANS(context->sensor_state.heading);
-    float desired_course = initial_bearing_between(p0, p1);
+    float desired_course = fmod(initial_bearing_between(p0, p1) + M_PI * 2, M_PI * 2);
     float relative_course = relative_bearing(current_course, desired_course);
 
     float cross_track_error = cross_track_distance(p0, p1, r);

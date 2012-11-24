@@ -28,7 +28,7 @@ void init_config(core_config *config) {
     config->course_setting.course_i = .0;
     config->course_setting.intercept_angle = 80;
     config->course_setting.intercept_gain = 50;
-    config->course_setting.bank_angle = 65;
+    config->course_setting.bank_angle = 45;
     config->course_setting.bank_gain = 1;
 
     config->course_setting.waypoint_count = 4; 
@@ -40,9 +40,9 @@ void init_config(core_config *config) {
     waypoints[0].lon = 11.32;
     waypoints[1].lat = 47.25;
     waypoints[1].lon = 11.35; 
-    waypoints[2].lat = 47.26;
+    waypoints[2].lat = 47.265;
     waypoints[2].lon = 11.35; 
-    waypoints[3].lat = 47.26;
+    waypoints[3].lat = 47.265;
     waypoints[3].lon = 11.32;
 
     // parallelogram
