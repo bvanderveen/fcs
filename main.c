@@ -26,8 +26,6 @@ void core_xplane_driver_write_effectors(core_xplane_driver *driver) {
     messages[0].data[6] = 0;
     messages[0].data[7] = 0;
 
-    printf("elv = %f, ail = %f, rud = %f\n", messages[0].data[0], messages[0].data[1], messages[0].data[2]);
-
     messages[1].index = xplane_data_throttle;
     messages[1].data[0] = driver->core.effector_state.throttle;
     messages[1].data[1] = driver->core.effector_state.throttle;
@@ -38,6 +36,7 @@ void core_xplane_driver_write_effectors(core_xplane_driver *driver) {
     messages[1].data[6] = 0;
     messages[1].data[7] = 0;
 
+    printf("elv = %f, ail = %f, rud = %f, thr = %f\n", messages[0].data[0], messages[0].data[1], messages[0].data[2], messages[1].data[0]);
     xplane_write_data(&driver->xplane, messages, 2);
 }
 
@@ -62,6 +61,8 @@ void on_data_message(xplane_context *xplane, xplane_message_data *messages, int 
         xplane_message_data *message = messages + i * sizeof(xplane_message_data);
 
         switch (message->index) {
+            case xplane_data_speeds:
+                driver->core.sensor_state.cas = message->data[0]; // IAS
             case xplane_data_pitch_roll_heading:
                 driver->core.sensor_state.pitch = message->data[0];
                 driver->core.sensor_state.roll = message->data[1];
@@ -73,6 +74,7 @@ void on_data_message(xplane_context *xplane, xplane_message_data *messages, int 
                 driver->core.sensor_state.alt = message->data[2];
                 break;
             case xplane_data_mach_vvi_g:
+                driver->core.sensor_state.vvi = message->data[2];
                 driver->core.sensor_state.aN = message->data[4];
                 driver->core.sensor_state.aT = message->data[5];
                 driver->core.sensor_state.aB = message->data[6];
@@ -97,7 +99,7 @@ int main() {
     init_xplane_context(&driver.xplane, 49003, 49000);
     driver.xplane.data_handler = &on_data_message;
 
-    core_xplane_driver_write_initial_state(&driver);
+    //core_xplane_driver_write_initial_state(&driver);
 
     struct timeval t0;
     gettimeofday(&t0, NULL);

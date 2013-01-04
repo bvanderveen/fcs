@@ -17,11 +17,6 @@ void init_config(core_config *config) {
     config->turn_coordinator.rudderController.i = 0;
     config->turn_coordinator.rudderController.d = .1;
 
-    config->pitch_setting.desiredPitch = 7;
-    config->pitch_setting.elevatorController.p = .05;
-    config->pitch_setting.elevatorController.i = 0;
-    config->pitch_setting.elevatorController.d = 0;
-
     config->course_setting.current_waypoint_index = 1;
     config->course_setting.waypoint_threshold = .00005;
     config->course_setting.course_p = 2;
@@ -75,6 +70,28 @@ void init_config(core_config *config) {
     // config->course_setting.course_controller.i = 0;
     // config->course_setting.course_controller.d = 0;
 
+
+    config->energy_setting.desiredAirspeed = 130 * 0.514444444; // knots to m/s
+    config->energy_setting.desiredAltitude = 5000 * 0.3048; // feet to m
+
+    config->energy_setting.accelerationGain = 1;
+    config->energy_setting.verticalSpeedGain = 1;
+
+    config->energy_setting.totalEnergyController.p = 1;
+    config->energy_setting.totalEnergyController.i = 0;
+    config->energy_setting.totalEnergyController.d = 0;
+
+    config->energy_setting.totalEnergyDistributionController.p = 1;
+    config->energy_setting.totalEnergyDistributionController.i = 0;
+    config->energy_setting.totalEnergyDistributionController.d = 0;
+
+    config->energy_setting.throttleController.p = 1;
+    config->energy_setting.throttleController.i = 1.0/10;
+    config->energy_setting.throttleController.d = 0;
+
+    config->energy_setting.elevatorController.p = 1;
+    config->energy_setting.elevatorController.i = 1.0/1;
+    config->energy_setting.elevatorController.d = 0;
 }
 
 void run_config(core_config *config, core_context *context, float dt) {
@@ -92,7 +109,7 @@ void run_config(core_config *config, core_context *context, float dt) {
     // acc += .0000000001 * dt;
     // config->heading_setting.desiredHeading = originalHeading + 140 * sin(acc);
 
-    core_pitch_setting_update(context, (void *)&config->pitch_setting, dt);
+    core_energy_setting_update(context, (void *)&config->energy_setting, dt);
     core_course_setting_update(context, (void *)&config->course_setting, dt);
     //core_heading_setting_update(context, (void *)&config->heading_setting, dt);
     core_turn_coordinator_update(context, (void *)&config->turn_coordinator, dt);

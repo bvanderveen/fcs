@@ -9,7 +9,9 @@ struct core_sensor_state {
     aT, aN, aB,
     pitch,
     roll,
-    heading;
+    heading,
+    cas,
+    vvi;
 };
 typedef struct core_sensor_state core_sensor_state;
 

@@ -27,14 +27,14 @@ float course_change(fcs_course_setting *setting, float relative_course, float cr
     float d = sigma_derivative * sin_relative_course;
     float result = p + i + d;
 
-    printf("relative_course %f\n", TO_DEGREES(relative_course));
-    printf("sigma %f\n", TO_DEGREES(sigma));
-    printf("error %f\n", TO_DEGREES(error));
-    printf("sigma_derivative %f\n", sigma_derivative);
-    printf("sin(relative_course) %f\n", sin_relative_course);
-    printf("p = %f\n", p);
-    printf("i = %f\n", i);
-    printf("d = %f\n", d);
+    // printf("relative_course %f\n", TO_DEGREES(relative_course));
+    // printf("sigma %f\n", TO_DEGREES(sigma));
+    // printf("error %f\n", TO_DEGREES(error));
+    // printf("sigma_derivative %f\n", sigma_derivative);
+    // printf("sin(relative_course) %f\n", sin_relative_course);
+    // printf("p = %f\n", p);
+    // printf("i = %f\n", i);
+    // printf("d = %f\n", d);
 
     return result;
 }
@@ -92,21 +92,23 @@ void follow_segment(core_context *context, fcs_course_setting *setting, geopoint
 
     float cross_track_error = cross_track_distance(p0, p1, r);
 
-    printf("cross_track_error (km) = %f\n", cross_track_error);
-    printf("current_course (deg) = %f\n", TO_DEGREES(current_course));
-    printf("desired_course (deg) = %f\n", TO_DEGREES(desired_course));
 
     float course_signal = course_change(setting, -relative_course, cross_track_error, dt);
         ///* + d_desired_course / dt */;
 
-    printf("course_signal (deg) = %f\n", TO_DEGREES(course_signal));
 
     float commanded_bank_angle = course_bank_angle(setting, course_signal);
-    printf("commanded_bank_angle (deg) = %f\n", TO_DEGREES(commanded_bank_angle));
 
     float current_roll = TO_RADIANS(context->sensor_state.roll);
-    printf("current bank angle (deg) = %f\n", TO_DEGREES(current_roll));
     float aileron_signal = course_control_roll(setting, current_roll, commanded_bank_angle, dt);
+
+    
+    // printf("cross_track_error (km) = %f\n", cross_track_error);
+    // printf("current_course (deg) = %f\n", TO_DEGREES(current_course));
+    // printf("desired_course (deg) = %f\n", TO_DEGREES(desired_course));
+    // printf("course_signal (deg) = %f\n", TO_DEGREES(course_signal));
+    // printf("commanded_bank_angle (deg) = %f\n", TO_DEGREES(commanded_bank_angle));
+    // printf("current bank angle (deg) = %f\n", TO_DEGREES(current_roll));
 
     context->effector_state.ail = -aileron_signal;
 }
