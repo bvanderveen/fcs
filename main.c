@@ -84,9 +84,14 @@ void on_data_message(xplane_context *xplane, xplane_message_data *messages, int 
     //core_sensor_state_print(&driver->core.sensor_state);
 }
 
+int timeval_msec(struct timeval *t)
+{
+    return 1000 * (t->tv_usec + 1000000 * t->tv_sec)
+}
+
 int timeval_subtract(struct timeval *t2, struct timeval *t1)
 {
-    return (t2->tv_usec + 1000000 * t2->tv_sec) - (t1->tv_usec + 1000000 * t1->tv_sec);
+    return timeval_msec(t2) - timeval_msec(t1);
 }
 
 int main() {
@@ -113,7 +118,7 @@ int main() {
         struct timeval t1;
         gettimeofday(&t1, NULL);
 
-        float dt = 1000 * timeval_subtract(&t1, &t0);
+        float dt = timeval_subtract(&t1, &t0);
 
         run_config(&driver.config, &driver.core, dt);
 
