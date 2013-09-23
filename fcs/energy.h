@@ -5,29 +5,27 @@
 #define __FCS_ENERGY
 
 struct core_energy_setting {
-    float desiredAirspeed;
-    float desiredAltitude;
+    float desiredFPA;
+    float desiredAcceleration;
 
-    float accelerationGain;
-    float verticalSpeedGain;
+    float throttleP;
+    float throttleI;
 
-    pid_controller totalEnergyController;
-    pid_controller totalEnergyDistributionController;
+    float elevatorP;
+    float elevatorI;
 
-    pid_controller throttleController;
-    pid_controller elevatorController;
+    float throttleErrorIntegral;
+    float elevatorErrorIntegral;
 
-    float previousSpeed;
-    float previousSpeedError;
-    float previousAltitudeError;
-    float fpaIntegral;
-    float accelIntegral;
+    float throttleElevatorBias;
 
-    float thrustCommand;
-    float flightPathAngleCommand;
+    float specificThrustCommand;
+    float elevatorRateCommand;
+
+    pid_controller thrustController;
 };
 typedef struct core_energy_setting core_energy_setting;
 
-void core_energy_setting_update(core_context *context, void *pitch_setting, float dt);
+void core_energy_setting_update(core_context *context, void *energy_setting, float dt);
 
 #endif
