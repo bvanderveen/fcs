@@ -96,7 +96,9 @@ int main() {
 
     init_config(&driver.config);
 
-    init_xplane_context(&driver.xplane, 49003, 49000);
+    int listen = 49003;
+    int destination = 49000;
+    init_xplane_context(&driver.xplane, listen, destination);
     driver.xplane.data_handler = &on_data_message;
 
     //core_xplane_driver_write_initial_state(&driver);
