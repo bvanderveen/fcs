@@ -72,22 +72,17 @@ int main() {
             udp_endpoint socket_a_broadcast;
             udp_endpoint_init(&socket_a_broadcast, INADDR_ANY, 49002);
             udp_endpoint socket_b_listen;
-            udp_endpoint_init(&socket_b_listen, INADDR_ANY, 49003);
+            udp_endpoint_init(&socket_b_listen, INADDR_ANY, 49002);
             udp_endpoint socket_b_broadcast;
-            udp_endpoint_init(&socket_b_broadcast, INADDR_ANY, 49004);
+            udp_endpoint_init(&socket_b_broadcast, INADDR_ANY, 49001);
 
             udp_packet *received_packet;
-            printf("a\n");
             udp_socket *socket_a = udp_socket_alloc(&socket_a_listen, &socket_a_broadcast, &udp_data_handler_function, &received_packet);
-            printf("b\n");
             udp_socket *socket_b = udp_socket_alloc(&socket_b_listen, &socket_b_broadcast, NULL, NULL);
-            printf("c\n");
 
             char *packet_data = "some data";
             udp_socket_write(socket_b, packet_data, 9);
-            printf("d\n");
             udp_socket_read(socket_a);
-            printf("e\n");
 
             assert(udp_endpoint_port(received_packet->ep) == 49002);
             assert(strncmp(received_packet->data, packet_data, 9) == 0);

@@ -2,6 +2,7 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -18,6 +19,9 @@ udp_packet *udp_packet_copy(udp_packet *p) {
     result->ep = result_ep;
     result->data = malloc(p->count);
     result->count = p->count;
+
+    memcpy(result->data, p->data, p->count);
+
     return result;
 }
 
@@ -52,10 +56,13 @@ int udp_endpoint_socket(udp_endpoint *endpoint) {
     int result = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
     if (result == -1) {
+        printf("[udp_socket] failed to create socket: errno %d\n", errno);
         return -1;
     }
 
     if (bind(result, (const struct sockaddr *)endpoint, sizeof(struct sockaddr_in)) == -1) {
+
+        printf("[udp_socket] failed to bind socket: errno %d\n", errno);
         return -1;
     }
 
@@ -64,7 +71,16 @@ int udp_endpoint_socket(udp_endpoint *endpoint) {
 
 udp_socket *udp_socket_alloc(udp_endpoint *listen, udp_endpoint *broadcast, udp_data_handler handler, void *context) {
     udp_socket *result = (udp_socket *)malloc(sizeof(udp_socket));
-    result->socket = udp_endpoint_socket(listen);
+    int socket = udp_endpoint_socket(listen);
+    
+    if(socket == -1) {
+        free(result);
+        printf("[udp_socket] failed to initialize socket\n");
+        return NULL;
+    }
+
+
+    result->socket = socket;
     result->broadcast = broadcast;
     result->handler = handler;
     result->context = context;
@@ -72,6 +88,7 @@ udp_socket *udp_socket_alloc(udp_endpoint *listen, udp_endpoint *broadcast, udp_
 }
 
 void udp_socket_dealloc(udp_socket *s) {
+    close(s->socket);
     free(s);
 }
 
@@ -84,7 +101,7 @@ void udp_socket_read(udp_socket *s) {
     int bytesRead = recvfrom(s->socket, buffer, bufferLength, 0, (struct sockaddr *)&peerEndpoint, (socklen_t *)&peerEndpointLength);
 
     if (bytesRead == -1) {
-        printf("recvfrom() failed: %d", errno);
+        printf("[udp_socket] recvfrom failed: errno %d\n", errno);
         return;
     }
 
@@ -100,7 +117,7 @@ void udp_socket_read(udp_socket *s) {
 }
 
 void udp_socket_write(udp_socket *s, char *data, int count) {
-    int bytesSent = sendto(s->socket, data, count, 0, (struct sockaddr *)&s->broadcast, sizeof(struct sockaddr_in));
+    int bytesSent = sendto(s->socket, data, count, 0, (struct sockaddr *)&s->broadcast->ep, sizeof(struct sockaddr_in));
 
     if (bytesSent < 0)
         printf("sendto() failed: %d", errno);
