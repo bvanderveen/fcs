@@ -25,7 +25,7 @@ udp_packet *udp_packet_copy(udp_packet *p) {
     return result;
 }
 
-void *udp_packet_dealloc(udp_packet *p) {
+void udp_packet_dealloc(udp_packet *p) {
     free(p->ep);
     free(p->data);
     free(p);
@@ -117,9 +117,9 @@ void udp_socket_read(udp_socket *s) {
 }
 
 void udp_socket_write(udp_socket *s, char *data, int count) {
-    int bytesSent = sendto(s->socket, data, count, 0, (struct sockaddr *)&s->broadcast->ep, sizeof(struct sockaddr_in));
+    int bytes_sent = sendto(s->socket, data, count, 0, (struct sockaddr *)&s->broadcast->ep, sizeof(struct sockaddr_in));
 
-    if (bytesSent < 0)
-        printf("sendto() failed: %d", errno);
+    if (bytes_sent < 0)
+        printf("[udp_socket] sendto failed: errno %d\n", errno);
 }
 

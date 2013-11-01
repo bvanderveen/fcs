@@ -14,7 +14,6 @@ void udp_endpoint_init(udp_endpoint *out, uint32_t address, int port);
 uint32_t udp_endpoint_address(udp_endpoint *ep);
 int udp_endpoint_port(udp_endpoint *ep);
 
-
 struct udp_packet {
     udp_endpoint *ep;
     char *data;
@@ -23,7 +22,7 @@ struct udp_packet {
 typedef struct udp_packet udp_packet;
 
 udp_packet *udp_packet_copy(udp_packet *);
-void *udp_packet_dealloc(udp_packet *);
+void udp_packet_dealloc(udp_packet *);
 
 typedef void(*udp_data_handler)(udp_packet *, void *);
 
