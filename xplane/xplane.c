@@ -1,81 +1,63 @@
 #include "xplane.h"
-#include <arpa/inet.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <ctype.h>
-#include <errno.h>
+#include <string.h>
+#include <stdio.h>
 
-void init_udp_endpoint(struct sockaddr_in *outEndpoint, long address, int port) {
-    memset(outEndpoint, 0, sizeof(struct sockaddr_in));
-    outEndpoint->sin_family = AF_INET;
-    outEndpoint->sin_port = htons(port);
-    outEndpoint->sin_addr.s_addr = htonl(address);
-}
+void xplane_udp_data_handler_function(udp_packet *p, void *context) {
+    xplane_socket *xplane_sock = context;
 
-int create_udp_socket(struct sockaddr_in *endpoint) {
-    int result = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-
-    if (result == -1) {
-        return -1;
-    }
-
-    if (bind(result, (const struct sockaddr *)endpoint, sizeof(struct sockaddr_in)) == -1) {
-        return -1;
-    }
-
-    return result;
-}
-
-void init_xplane_context(xplane_context *context, int listenPort, int destinationPort) {
-    init_udp_endpoint(&context->listenEndpoint, INADDR_ANY, listenPort);
-    init_udp_endpoint(&context->destinationEndpoint, INADDR_ANY, destinationPort);
-    context->socket = create_udp_socket(&context->listenEndpoint);
-}
-
-void on_packet(xplane_context *context, char *buffer, int length, struct sockaddr_in *peerEndpoint) {
-    //printf("on_packet %s:%d - %d bytes\n", inet_ntoa(peerEndpoint->sin_addr), ntohs(peerEndpoint->sin_port), length);
     xplane_message_header *header;
-    header = (xplane_message_header *)buffer;
+    header = (xplane_message_header *)p->data;
 
     if (strncmp(header->code, "DATA", 4) == 0) {
-        int data_count = (length - 5) / 36;
+        int data_count = (p->count - 5) / 36;
 
         xplane_message_data *data = malloc(sizeof(xplane_message_data) * data_count);
 
         for (int i = 0; i < data_count; i++) {
-            char *b = buffer + 5 + (36 * i);
+            char *b = p->data + 5 + (36 * i);
 
-            xplane_message_data *data_message = data + (i * sizeof(xplane_message_data));
+            xplane_message_data *data_message = &data[i];
 
             data_message->index = (uint32_t)(*b);
             memcpy(data_message->data, b + 4, 32);
         }
 
-        context->data_handler(context, data, data_count);
+        xplane_sock->handler(data, data_count, xplane_sock->context);
+
         free(data);
     }
-}
-
-void xplane_context_read(xplane_context *context) {
-    int bufferLength = 4 * 1024;
-    char buffer[bufferLength];
-    struct sockaddr_in peerEndpoint;
-    size_t peerEndpointLength = sizeof(peerEndpoint);
-
-    int bytesRead = recvfrom(context->socket, buffer, bufferLength, 0, (struct sockaddr *)&peerEndpoint, (socklen_t *)&peerEndpointLength);
-
-    if (bytesRead == -1) {
-        printf("recvfrom() failed: %d", errno);
-        return;
+    else {
+        printf("[xplane_socket] discarding bogus message\n");
     }
-
-    on_packet(context, buffer, bytesRead, &peerEndpoint);
 }
 
-void xplane_write_data(xplane_context *context, xplane_message_data *messages, int count) {
+xplane_socket *xplane_socket_alloc(udp_socket *s, xplane_data_handler handler, void *context) {
+    xplane_socket *result = malloc(sizeof(xplane_socket));
+
+    s->handler = &xplane_udp_data_handler_function;
+    s->context = result;
+
+
+    result->socket = s;
+    result->context = context;
+    result->handler = handler;
+
+    
+    return result;
+}
+
+void xplane_socket_dealloc(xplane_socket *s) {
+    free(s);
+}
+
+void xplane_socket_read(xplane_socket *s) {
+    udp_socket *socket = s->socket;
+    udp_socket_read(socket);
+}
+
+void xplane_socket_write(xplane_socket *s, xplane_message_data *messages, int count) {
+    udp_socket *socket = s->socket;
 
     int bufferLength = sizeof(xplane_message_data) * count + 5;
     char *buffer = malloc(bufferLength);
@@ -105,10 +87,54 @@ void xplane_write_data(xplane_context *context, xplane_message_data *messages, i
         }
     }
 
-    int bytesSent = sendto(context->socket, buffer, bufferLength, 0, (struct sockaddr *)&context->destinationEndpoint, sizeof(struct sockaddr_in));
-
-    if (bytesSent < 0)
-        printf("sendto() failed: %d", errno);
-
-    free(buffer);
+    udp_socket_write(socket, buffer, bufferLength);
 }
+
+// void xplane_udp_socket(udp_socket *socket, core_context *context) {
+//     int listen = 49003;
+//     int destination = 49000;
+//     udp_socket_init(socket, listen, destination, &on_data_message, context);
+
+//     socket.data_handler = &on_data_message;
+// }
+
+// void core_xplane_driver_write_effectors(core_xplane_driver *driver) {
+//     xplane_message_data messages[2];
+
+//     messages[0].index = xplane_data_ail_elv_rud;
+//     messages[0].data[0] = driver->core.effector_state.elv;
+//     messages[0].data[1] = driver->core.effector_state.ail;
+//     messages[0].data[2] = driver->core.effector_state.rud;
+//     messages[0].data[3] = 0;
+//     messages[0].data[4] = 0;
+//     messages[0].data[5] = 0;
+//     messages[0].data[6] = 0;
+//     messages[0].data[7] = 0;
+
+//     messages[1].index = xplane_data_throttle;
+//     messages[1].data[0] = driver->core.effector_state.throttle;
+//     messages[1].data[1] = driver->core.effector_state.throttle;
+//     messages[1].data[2] = driver->core.effector_state.throttle;
+//     messages[1].data[3] = driver->core.effector_state.throttle;
+//     messages[1].data[4] = 0;
+//     messages[1].data[5] = 0;
+//     messages[1].data[6] = 0;
+//     messages[1].data[7] = 0;
+
+//     printf("elv = %f, ail = %f, rud = %f, thr = %f\n", messages[0].data[0], messages[0].data[1], messages[0].data[2], messages[1].data[0]);
+//     xplane_write_data(&driver->xplane, messages, 2);
+// }
+
+// void core_xplane_driver_write_initial_state(core_xplane_driver *driver) {
+//     xplane_message_data messages[2] = {
+//         { .index = xplane_data_loc_vel_dist, .data = { 
+//             -1280, -900, 900, 
+//             50, 120, 0, 
+//             //0, 0, 0,
+//             -999, -999 } },
+//         { .index = xplane_data_pitch_roll_heading, .data = {
+//             30.0, 30.0, 18.0,
+//             -999, -999, -999, -999, -999 } }
+//     };
+//     udp_socket_write(&driver->socket, messages, 3);
+// }
