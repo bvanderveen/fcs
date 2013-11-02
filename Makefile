@@ -1,18 +1,27 @@
-default: 
-	gcc -g -std=c99 -o fcs.o \
-	main.c \
-	fcs/*.c \
-	xplane/*.c
+yajl-static:
+	cmake yajl
+	cd yajl && make
 
-default-test:
-	gcc -g -std=c99 -o fcs-tests.o \
-	tests.c \
+fcs-main: yajl-static
+	gcc -g -std=c99 -o fcs-main.o \
+	-Iyajl/yajl-2.0.5/include \
+	yajl/yajl-2.0.5/lib/libyajl_s.a \
 	fcs/state.c \
 	fcs/udp.c \
-	xplane/xplane.c
+	xplane/xplane.c \
+	main.c
 
-run: default
+fcs-test: yajl-static
+	gcc -g -std=c99 -o fcs-tests.o \
+	-Iyajl/yajl-2.0.5/include \
+	yajl/yajl-2.0.5/lib/libyajl_s.a \
+	fcs/state.c \
+	fcs/udp.c \
+	xplane/xplane.c \
+	tests.c
+
+run: fcs-main
 	./fcs.o
 
-test: default-test
+test: fcs-test
 	./fcs-tests.o
