@@ -14,6 +14,8 @@ HOW; \
 printf("OK\n"); \
 }
 
+#define assert_float(ACTUAL, EXPECTED) assert(((ACTUAL) > ((EXPECTED) - .01)) && ((ACTUAL) < ((EXPECTED) + .01)))
+
 void test_udp_data_handler_function(udp_packet *p, void *context) {
     udp_packet **packet = context;
     *packet = udp_packet_copy(p);
@@ -164,13 +166,24 @@ int main() {
                 xplane_socket_read(xplane_sock);
 
                 assert(received_messages[0].index == 1);
+                assert_float(received_messages[0].data[0], .1);
+                assert_float(received_messages[0].data[1], .2);
+                assert_float(received_messages[0].data[2], .3);
+                assert_float(received_messages[0].data[3], .4);
+                assert_float(received_messages[0].data[4], .5);
+                assert_float(received_messages[0].data[5], .6);
+                assert_float(received_messages[0].data[6], .7);
+                assert_float(received_messages[0].data[7], .8);
+
                 assert(received_messages[1].index == 2);
-                // assert(received_messages->data[0] > .1 -.01 && received_messages->data[0] < .1 + .01);
-                // assert(received_messages->data[1] > .2 -.01 && received_messages->data[0] < .2 + .01);
-                // assert(received_messages->data[2] > .3 -.01 && received_messages->data[0] < .3 + .01);
-                // assert(received_messages->data[3] > .4 -.01 && received_messages->data[0] < .4 + .01);
-                // assert(received_messages->data[4] > .5 -.01 && received_messages->data[0] < .5 + .01);
-                // assert(received_messages->data[5] > .6 -.01 && received_messages->data[0] < .6 + .01);
+                assert_float(received_messages[1].data[7], .1);
+                assert_float(received_messages[1].data[6], .2);
+                assert_float(received_messages[1].data[5], .3);
+                assert_float(received_messages[1].data[4], .4);
+                assert_float(received_messages[1].data[3], .5);
+                assert_float(received_messages[1].data[2], .6);
+                assert_float(received_messages[1].data[1], .7);
+                assert_float(received_messages[1].data[0], .8);
             }
 
             udp_socket_dealloc(raw);
