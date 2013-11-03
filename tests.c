@@ -59,6 +59,21 @@ int main() {
             assert(result == 42);
         });
 
+        IT_SHOULD("store json", {
+            const char *key = "jaysahn";
+
+            char *json = "{\"data\":123}";            
+
+            yajl_val v = yajl_tree_parse(json, NULL, 0);
+
+            state_set_json(state, key, v);
+            yajl_val result = state_get_json(state, key);
+
+            assert(YAJL_IS_OBJECT(result));
+            assert(strncmp(YAJL_GET_OBJECT(result)->keys[0], "data", 4) == 0);
+            assert(YAJL_GET_INTEGER(YAJL_GET_OBJECT(result)->values[0]) == 123);
+        });
+
         state_dealloc(state);
     }
 
@@ -124,7 +139,6 @@ int main() {
             xplane_socket *xplane_sock = xplane_socket_alloc(wrapped, NULL, &received_messages);
 
             {
-
                 xplane_socket_write(xplane_sock, fake_xplane_data, 2);
 
                 udp_socket_read(raw);
@@ -150,7 +164,6 @@ int main() {
             xplane_socket *xplane_sock = xplane_socket_alloc(wrapped, &test_xplane_data_handler_function, received_messages);
 
             {
-
                 char *xplane_data_bytes = malloc(5 + sizeof(xplane_message_data));
                 char *p = xplane_data_bytes;
 
@@ -190,6 +203,22 @@ int main() {
             udp_socket_dealloc(wrapped);
 
             xplane_socket_dealloc(xplane_sock);
+        });
+    }
+
+    TEST_GROUP("messages") 
+    {
+        IT_SHOULD("update state from network", {
+            // set up state
+            // set up xplane socket
+            // set up listen socket
+            // write to xplane socket
+            // read listen socket
+            // asser state updated
+        });
+
+        IT_SHOULD("broadcast state to network", {
+
         });
     }
 }
