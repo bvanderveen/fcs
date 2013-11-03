@@ -9,6 +9,7 @@ fcs-main: yajl-static
 	fcs/state.c \
 	fcs/udp.c \
 	xplane/xplane_socket.c \
+	xplane/xplane_bus.c \
 	main.c
 
 fcs-test: yajl-static
@@ -18,6 +19,7 @@ fcs-test: yajl-static
 	fcs/state.c \
 	fcs/udp.c \
 	xplane/xplane_socket.c \
+	xplane/xplane_bus.c \
 	tests.c
 
 run: fcs-main

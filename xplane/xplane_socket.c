@@ -10,22 +10,27 @@ void xplane_udp_data_handler_function(udp_packet *p, void *context) {
     header = (xplane_message_header *)p->data;
 
     if (strncmp(header->code, "DATA", 4) == 0) {
-        int data_count = (p->count - 5) / 36;
+        int data_count = (p->count - 5) / sizeof(xplane_message_data);
 
+        printf("[xplane_udp_data_handler_function] 1\n");
         xplane_message_data *data = malloc(sizeof(xplane_message_data) * data_count);
+        printf("[xplane_udp_data_handler_function] 2\n");
 
         for (int i = 0; i < data_count; i++) {
-            char *b = p->data + 5 + (36 * i);
+            char *b = p->data + 5 + (sizeof(xplane_message_data) * i);
 
             xplane_message_data *data_message = &data[i];
 
             data_message->index = (uint32_t)(*b);
-            memcpy(data_message->data, b + 4, 32);
+            memcpy(data_message->data, b + sizeof(uint32_t), sizeof(float) * 8);
         }
 
+        printf("[xplane_udp_data_handler_function] 3\n");
         xplane_sock->handler(data, data_count, xplane_sock->context);
+        printf("[xplane_udp_data_handler_function] 4\n");
 
         free(data);
+        printf("[xplane_udp_data_handler_function] 5\n");
     }
     else {
         printf("[xplane_socket] discarding bogus message\n");
