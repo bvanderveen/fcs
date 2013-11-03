@@ -1,6 +1,6 @@
 #include "fcs/state.h"
 #include "fcs/udp.h"
-#include "xplane/xplane.h"
+#include "xplane/xplane_socket.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -32,7 +32,6 @@ int main() {
     
     TEST_GROUP("state")
     {
-
         state *state = NULL;
         IT_SHOULD("initialize state",
         {
@@ -115,7 +114,7 @@ int main() {
         });
     }
 
-    TEST_GROUP("xplane")
+    TEST_GROUP("xplane_socket")
     {
         udp_endpoint xplane_listen_ep;
         udp_endpoint_init(&xplane_listen_ep, INADDR_ANY, 49000);
