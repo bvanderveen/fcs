@@ -1,28 +1,21 @@
 #import "udp.h"
+#import "yajl/yajl_tree.h"
 
 #ifndef __FCS_MESSAGE_H
 #define __FCS_MESSAGE_H
 
-struct message_data
-{
-    uint32_t index;
-    float data[8];
-};
-typedef struct message_data message_data;
+typedef void (*json_handler)(yajl_val, void *);
 
-typedef void (*)(message_channel *, message_data *, int, void *) message_handler;
-
-struct message_channel {
+struct json_socket {
 	udp_socket *socket;
-	message_handler *handler;
+	json_handler handler;
 	void *context;
 };
-typedef struct message_channel message_channel;
+typedef struct json_socket json_socket;
 
-message_channel *message_channel_alloc(udp_socket *s, message_handler *, void *context);
-void message_channel_dealloc(message_channel *c);
+json_socket *json_socket_alloc(udp_socket *s);
+void json_socket_dealloc(json_socket *s);
 
-void message_channel_receive(message_channel *c);
-void message_channel_send(message_channel *c, message_data *messages, int count);
+void json_socket_read(json_socket *s, json_handler handler);
 
 #endif

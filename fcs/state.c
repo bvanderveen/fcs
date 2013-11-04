@@ -1,6 +1,7 @@
 #include "state.h"
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
 state *state_alloc(int count) {
     state *result = (state *)malloc(sizeof(state));
@@ -18,7 +19,8 @@ void state_dealloc(state *s) {
 state_value *state_find_by_name(state *s, const char *name) {
     // mad dumb O(n) linear traversal
     for (int i = 0; i < s->last; i++) {
-        if (s->values[i].name == name) {
+        // XXX buffer overflow
+        if (strcmp(s->values[i].name, name) == 0) {
             return &s->values[i];
         }
     }

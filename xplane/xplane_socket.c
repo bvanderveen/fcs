@@ -22,10 +22,10 @@ void xplane_udp_data_handler_function(udp_packet *p, void *context) {
             xplane_message_data *data_message = &data[i];
 
             data_message->index = (uint32_t)(*b);
-            memcpy(data_message->data, b + sizeof(uint32_t), sizeof(float) * 8);
+            memcpy(data_message->data, b + sizeof(uint32_t), sizeof(float) * 8 );
         }
 
-        printf("[xplane_udp_data_handler_function] 3\n");
+        printf("[xplane_udp_data_handler_function] handler = %x\n", (unsigned int)xplane_sock->handler);
         xplane_sock->handler(data, data_count, xplane_sock->context);
         printf("[xplane_udp_data_handler_function] 4\n");
 
@@ -37,17 +37,12 @@ void xplane_udp_data_handler_function(udp_packet *p, void *context) {
     }
 }
 
-xplane_socket *xplane_socket_alloc(udp_socket *s, xplane_data_handler handler, void *context) {
+xplane_socket *xplane_socket_alloc(udp_socket *s) {
     xplane_socket *result = malloc(sizeof(xplane_socket));
 
-    s->handler = &xplane_udp_data_handler_function;
     s->context = result;
 
-
     result->socket = s;
-    result->context = context;
-    result->handler = handler;
-
     
     return result;
 }
@@ -56,9 +51,10 @@ void xplane_socket_dealloc(xplane_socket *s) {
     free(s);
 }
 
-void xplane_socket_read(xplane_socket *s) {
-    udp_socket *socket = s->socket;
-    udp_socket_read(socket);
+void xplane_socket_read(xplane_socket *s, xplane_data_handler handler) {
+    s->socket->context = s;
+    s->handler = handler;
+    udp_socket_read(s->socket, xplane_udp_data_handler_function);
 }
 
 void xplane_socket_write(xplane_socket *s, xplane_message_data *messages, int count) {
@@ -94,52 +90,3 @@ void xplane_socket_write(xplane_socket *s, xplane_message_data *messages, int co
 
     udp_socket_write(socket, buffer, bufferLength);
 }
-
-// void xplane_udp_socket(udp_socket *socket, core_context *context) {
-//     int listen = 49003;
-//     int destination = 49000;
-//     udp_socket_init(socket, listen, destination, &on_data_message, context);
-
-//     socket.data_handler = &on_data_message;
-// }
-
-// void core_xplane_driver_write_effectors(core_xplane_driver *driver) {
-//     xplane_message_data messages[2];
-
-//     messages[0].index = xplane_data_ail_elv_rud;
-//     messages[0].data[0] = driver->core.effector_state.elv;
-//     messages[0].data[1] = driver->core.effector_state.ail;
-//     messages[0].data[2] = driver->core.effector_state.rud;
-//     messages[0].data[3] = 0;
-//     messages[0].data[4] = 0;
-//     messages[0].data[5] = 0;
-//     messages[0].data[6] = 0;
-//     messages[0].data[7] = 0;
-
-//     messages[1].index = xplane_data_throttle;
-//     messages[1].data[0] = driver->core.effector_state.throttle;
-//     messages[1].data[1] = driver->core.effector_state.throttle;
-//     messages[1].data[2] = driver->core.effector_state.throttle;
-//     messages[1].data[3] = driver->core.effector_state.throttle;
-//     messages[1].data[4] = 0;
-//     messages[1].data[5] = 0;
-//     messages[1].data[6] = 0;
-//     messages[1].data[7] = 0;
-
-//     printf("elv = %f, ail = %f, rud = %f, thr = %f\n", messages[0].data[0], messages[0].data[1], messages[0].data[2], messages[1].data[0]);
-//     xplane_write_data(&driver->xplane, messages, 2);
-// }
-
-// void core_xplane_driver_write_initial_state(core_xplane_driver *driver) {
-//     xplane_message_data messages[2] = {
-//         { .index = xplane_data_loc_vel_dist, .data = { 
-//             -1280, -900, 900, 
-//             50, 120, 0, 
-//             //0, 0, 0,
-//             -999, -999 } },
-//         { .index = xplane_data_pitch_roll_heading, .data = {
-//             30.0, 30.0, 18.0,
-//             -999, -999, -999, -999, -999 } }
-//     };
-//     udp_socket_write(&driver->socket, messages, 3);
-// }

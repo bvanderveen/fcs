@@ -1,85 +1,38 @@
 #include "message.h"
+#include <stdlib.h>
+#include <stdio.h>
 
-struct message_header
-{
-    char code[4];
-    uint8_t reserved;
-};
-typedef struct message_header message_header;
+void json_socket_udp_data_handler_function(udp_packet *p, void *context) {
+    printf("json_socket_udp_data_handler_function\n");
+    json_socket *s = context;
 
-void message_channel_data_handler(udp_socket *socket, char *data, int count, udp_endpoint *peer, void *context) {
-    message_channel channel = (message_channel *)context;
+    // XXX buffer overflow waiting to happen
+    yajl_val v = yajl_tree_parse(p->data, NULL, 0);
 
-    message_header *header;
-    header = (message_header *)data;
+    printf("[json_socket_udp_data_handler_function] handler = %x\n", (unsigned int)s->handler);
+    s->handler(v, s->context);
 
-    if (strncmp(header->code, "DATA", 4) == 0) {
-        int data_count = (length - 5) / 36;
-
-        message_data *data = malloc(sizeof(message_data) * data_count);
-
-        for (int i = 0; i < data_count; i++) {
-            char *b = data + 5 + (36 * i);
-
-            message_data *m = data + (i * sizeof(message_data));
-
-            m->index = (uint32_t)(*b);
-            memcpy(m->data, b + 4, 32);
-        }
-
-        channel->handler(channel, data, data_count, channel->context);
-        free(data);
-    }
+    // XXX memory leak
+    //free(v);
 }
 
-message_channel *message_channel_alloc(udp_socket *s, void *context) {
-    message_channel *result = (message_channel *)malloc(sizeof(message_channel));
+json_socket *json_socket_alloc(udp_socket *s) {
+    json_socket *result = malloc(sizeof(json_socket));
+
     result->socket = s;
-    result->handler = handler;
-    result->context = context;
+
     return result;
 }
 
-void message_channel_dealloc(message_channel *c) {
-    free(c);
+void json_socket_dealloc(json_socket *s) {
+    free(s);
 }
 
-void message_channel_receive(message_channel *c) {
-    udp_socket_read(c->socket);
-}
-
-void message_channel_send(message_channel *c, message_data *messages, int count) {
-    int bufferLength = sizeof(message_data) * count + 5;
-    char *buffer = malloc(bufferLength);
-    *(buffer + bufferLength) = 0;
-    char *b = buffer;
-
-    memcpy(buffer, "DATA\0", 5);
-    b += 5;
-
-    for (int i = 0; i < count; i++) {
-        message_data message = messages[i];
-        memcpy(b, &message.index, 4);
-        b += 4;
-
-        for (int j = 0; j < 8; j++) {
-            float value = message.data[j];
-            
-            // xplane seems to crash if it gets NaN
-            if (value != value) {
-                printf("got NaN, ignoring\n");
-                value = 0;
-
-            }
-
-            memcpy(b, &value, sizeof(float));
-            b += sizeof(float);
-        }
-    }
-
-    // write to socket
-
-    udp_socket_write(c->socket, buffer, b);
-
-    free(buffer);
+void json_socket_read(json_socket *s, json_handler handler) {
+    printf("[json_socket_read] 1\n");
+    s->socket->context = s;
+    s->handler = handler;
+    printf("[json_socket_read] handler = %x\n", (unsigned int)handler);
+    udp_socket_read(s->socket, json_socket_udp_data_handler_function);
+    printf("[json_socket_read] 2\n");
 }

@@ -1,4 +1,5 @@
 #include "xplane_bus.h"
+#include <stdio.h>
 
 enum xplane_data_index {
     xplane_data_speeds = 3,
@@ -42,7 +43,8 @@ void xplane_bus_write_effectors(xplane_socket *socket, state *state) {
     xplane_socket_write(socket, messages, 2);
 }
 
-void xplane_bus_xplane_data_handler_function(xplane_message_data *ms, int count, void *context) {
+void message_xplane_data_handler_function(xplane_message_data *ms, int count, void *context) {
+    printf("butttttttt----!!!!\n");
     state *state = context;
 
      for (int i = 0; i < count; i++) {
@@ -68,8 +70,27 @@ void xplane_bus_xplane_data_handler_function(xplane_message_data *ms, int count,
     }
 }
 
+void message_json_handler_function(yajl_val j, void *context) {
+    state *s = context;
+
+    yajl_val name = YAJL_GET_OBJECT(j)->values[0];
+    yajl_val value = YAJL_GET_OBJECT(j)->values[1];
+
+    if (YAJL_IS_INTEGER(value))
+        state_set(s, YAJL_GET_STRING(name), (float)YAJL_GET_INTEGER(j));
+    else if (YAJL_IS_DOUBLE(value))
+        state_set(s, YAJL_GET_STRING(name), (float)YAJL_GET_DOUBLE(j));
+    else
+        state_set_json(s, YAJL_GET_STRING(name), value);
+}
+
 void xplane_bus_read_sensors(xplane_socket *socket, state *state) {
-    socket->handler = xplane_bus_xplane_data_handler_function;
     socket->context = state;
-    xplane_socket_read(socket);
+    xplane_socket_read(socket, message_xplane_data_handler_function);
+}
+
+void message_bus_read_json(json_socket *socket, state *state) {
+    printf("[message_bus_read_json] handler = %x\n", message_json_handler_function);
+    socket->context = state;
+    json_socket_read(socket, message_json_handler_function);
 }

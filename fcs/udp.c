@@ -69,7 +69,7 @@ int udp_endpoint_socket(udp_endpoint *endpoint) {
     return result;
 }
 
-udp_socket *udp_socket_alloc(udp_endpoint *listen, udp_endpoint *broadcast, udp_data_handler handler, void *context) {
+udp_socket *udp_socket_alloc(udp_endpoint *listen, udp_endpoint *broadcast) {
     udp_socket *result = (udp_socket *)malloc(sizeof(udp_socket));
     int socket = udp_endpoint_socket(listen);
     
@@ -79,11 +79,9 @@ udp_socket *udp_socket_alloc(udp_endpoint *listen, udp_endpoint *broadcast, udp_
         return NULL;
     }
 
-
     result->socket = socket;
     result->broadcast = broadcast;
-    result->handler = handler;
-    result->context = context;
+
     return result;
 }
 
@@ -92,28 +90,35 @@ void udp_socket_dealloc(udp_socket *s) {
     free(s);
 }
 
-void udp_socket_read(udp_socket *s) {
-    int bufferLength = 4 * 1024;
-    char buffer[bufferLength];
-    struct sockaddr_in peerEndpoint;
-    size_t peerEndpointLength = sizeof(peerEndpoint);
+void udp_socket_read(udp_socket *s, udp_data_handler handler) {
+    int buffer_length = 4 * 1024;
+    char buffer[buffer_length];
+    struct sockaddr_in peer_endpoint;
+    size_t peer_endpoint_length = sizeof(peer_endpoint);
 
-    int bytesRead = recvfrom(s->socket, buffer, bufferLength, 0, (struct sockaddr *)&peerEndpoint, (socklen_t *)&peerEndpointLength);
+    printf("[udp_socket_read] will recvfrom\n");
 
-    if (bytesRead == -1) {
+    int bytes_read = recvfrom(s->socket, buffer, buffer_length, 0, (struct sockaddr *)&peer_endpoint, (socklen_t *)&peer_endpoint_length);
+
+    printf("[udp_socket_read] did recvfrom\n");
+
+    if (bytes_read == -1) {
         printf("[udp_socket] recvfrom failed: errno %d\n", errno);
         return;
     }
 
     udp_endpoint ep;
-    ep.ep = peerEndpoint;
+    ep.ep = peer_endpoint;
 
     udp_packet packet;
     packet.ep = &ep;
     packet.data = (char *)&buffer;
-    packet.count = bytesRead;
+    packet.count = bytes_read;
 
-    s->handler(&packet, s->context);
+    printf("[udp_socket_read] 1\n");
+    handler(&packet, s->context);
+    printf("[udp_socket_read] 2\n");
+    
 }
 
 void udp_socket_write(udp_socket *s, char *data, int count) {

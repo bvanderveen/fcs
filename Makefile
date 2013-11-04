@@ -8,6 +8,7 @@ fcs-main: yajl-static
 	yajl/yajl-2.0.5/lib/libyajl_s.a \
 	fcs/state.c \
 	fcs/udp.c \
+	fcs/message.c \
 	xplane/xplane_socket.c \
 	xplane/xplane_bus.c \
 	main.c
@@ -18,6 +19,7 @@ fcs-test: yajl-static
 	yajl/yajl-2.0.5/lib/libyajl_s.a \
 	fcs/state.c \
 	fcs/udp.c \
+	fcs/message.c \
 	xplane/xplane_socket.c \
 	xplane/xplane_bus.c \
 	tests.c

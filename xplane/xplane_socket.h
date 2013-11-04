@@ -26,10 +26,10 @@ struct xplane_socket {
 };
 typedef struct xplane_socket xplane_socket;
 
-xplane_socket *xplane_socket_alloc(udp_socket *s, xplane_data_handler handler, void *context);
+xplane_socket *xplane_socket_alloc(udp_socket *s);
 void xplane_socket_dealloc(xplane_socket *s);
 
-void xplane_socket_read(xplane_socket *s);
+void xplane_socket_read(xplane_socket *s, xplane_data_handler handler);
 void xplane_socket_write(xplane_socket *s, xplane_message_data *messages, int count);
 
 #endif
