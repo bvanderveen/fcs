@@ -9,8 +9,8 @@ fcs-main: yajl-static
 	fcs/state.c \
 	fcs/udp.c \
 	fcs/json_socket.c \
-	fcs/xplane/xplane_socket.c \
-	fcs/xplane/xplane_bus.c \
+	fcs/net/xplane_socket.c \
+	fcs/net/xplane_bus.c \
 	main.c
 
 fcs-test: yajl-static
@@ -20,8 +20,8 @@ fcs-test: yajl-static
 	fcs/state.c \
 	fcs/udp.c \
 	fcs/json_socket.c \
-	fcs/xplane/xplane_socket.c \
-	fcs/xplane/xplane_bus.c \
+	fcs/net/xplane_socket.c \
+	fcs/net/xplane_bus.c \
 	tests.c
 
 run: fcs-main
