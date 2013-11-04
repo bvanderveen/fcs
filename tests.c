@@ -1,7 +1,7 @@
 #include "fcs/state.h"
 #include "fcs/udp.h"
-#include "xplane/xplane_socket.h"
-#include "xplane/xplane_bus.h"
+#include "fcs/xplane/xplane_socket.h"
+#include "fcs/xplane/xplane_bus.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>

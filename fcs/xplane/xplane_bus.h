@@ -1,6 +1,6 @@
 #include "xplane_socket.h"
-#include "../fcs/state.h"
-#include "../fcs/message.h"
+#include "../state.h"
+#include "../message.h"
 
 #ifndef __XPLANE_BUS_H
 #define __XPLANE_BUS_H
