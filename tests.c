@@ -1,5 +1,6 @@
 #include "fcs/state.h"
 #include "fcs/udp.h"
+#include "fcs/json_socket.h"
 #include "fcs/xplane/xplane_socket.h"
 #include "fcs/xplane/xplane_bus.h"
 #include <assert.h>

@@ -1,6 +1,6 @@
 #include "xplane_socket.h"
 #include "../state.h"
-#include "../message.h"
+#include "../json_socket.h"
 
 #ifndef __XPLANE_BUS_H
 #define __XPLANE_BUS_H

@@ -90,7 +90,7 @@ void xplane_bus_read_sensors(xplane_socket *socket, state *state) {
 }
 
 void message_bus_read_json(json_socket *socket, state *state) {
-    printf("[message_bus_read_json] handler = %x\n", message_json_handler_function);
+    printf("[message_bus_read_json] handler = %x\n", (unsigned int)message_json_handler_function);
     socket->context = state;
     json_socket_read(socket, message_json_handler_function);
 }
