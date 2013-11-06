@@ -2,7 +2,7 @@
 
 This will be a flight control system for flying robots.
 
-What it does:
+## What it does:
 
 - Controls an X-Plane flight simulation over UDP
  - Receives UDP packets from X-Plane containing position, accelleration, and attitude data
@@ -17,33 +17,39 @@ What it does:
   - Automatic turn coordinator
   - Total energy controller (altitude, speed, angle-of-attack)
 
-What it will do:
+## What it will do:
 
 - Autonomous landing
 
-Design intent:
+## Design intent:
 
 I wrote this thing in C because I wanted to use the LLVM toolchain to target embedded systems. Higher level applications (glass cockpit, flight planner) will be writ in Clojure.
 
 System maintains a state singleton in memory that can be read or written to over UDP. At the start of the loop the system reads values from the network, updates the state as necessary. Then the control phase updates steps its algorithm forward in time according to the values read from the system state. Finally, any selected output values will be broadcast.
 
-## Selecting values
+## Setting system state
 
-Send the JSON message to the listener:
+Configure it to listen on a port (dig in source for now).
 
-`{"name": "state.output": [ ... names of states to be output ... ]}`
+Huck UDP packets of JSON at that port. For example, you could just hook a joystick to it:
 
-For a list of names see `state.h`.
+    [
+    {"name": "state.effector.aileron", "value": .12`},
+    {"name": "state.effector.rudder", "value": .11},
+    {"name": "state.effector.elevator", "value": .21}
+    ]
+    
+Input packets can be single name-value pairs or arrays of name-value pairs
+ 
+## Selecting output values
 
-The values are output in the perfectly adequate X-Plane format.
+There are some special values that control the output behavior. You can select a UDP destination and port, and specify the values you want to see output.
 
-`"DATA\0"` followed N of:
+`{"name": "state.output.destination.ip", "value": "192.168.0.1" }`
+`{"name": "state.output.destination.port", "value": 34231 }`
+`{"name": "state.output.values", "value": [ "state.sensor.latitude", "state.sensor.longitude" ]}`
 
-    struct xplane_message_data
-    {
-        uint32_t index; // 
-        float data[8]; // these are 32 bits each on my system
-    };
+For a list of names see `state.h`. JSON typed values are not broadcast. Each broadcast packet is a 32-bit float representing a value named in `state.output.values`, in corresponding order.
 
-That's the string `"DATA\0"` followed by N * 9 32-bit numbers. The `index` integer value will indicate what the following floats values mean. Exactly what means what is TBD.
+
 
