@@ -145,5 +145,5 @@ void core_course_setting_update(core_context *context, void *course_setting, flo
     printf("previous_waypoint_index %d\n", previous_waypoint_index);
 
     // fly course
-    follow_segment(context, course_setting, &previous_waypoint, &current_waypoint, &current_position, dt);
+    follow_segment(context, setting, &previous_waypoint, &current_waypoint, &current_position, dt);
 }

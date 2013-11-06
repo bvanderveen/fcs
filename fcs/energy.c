@@ -40,7 +40,5 @@ void core_energy_setting_update(core_context *context, void *energy_setting, flo
     context->effector_state.throttle = -setting->thrustController.output;
 
     context->effector_state.elv += elevatorRateCommand;
-
-
     setting->previousSpeed = currentSpeed;
 }
