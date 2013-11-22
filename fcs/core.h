@@ -3,13 +3,10 @@
 
 struct core_sensor_state {
     float 
-    lat, 
-    lon,
-    alt,
+    lat, lon, alt,
+    cas, vvi;
     aT, aN, aB,
-    pitch,
-    roll,
-    heading;
+    pitch, roll, heading,
 };
 typedef struct core_sensor_state core_sensor_state;
 

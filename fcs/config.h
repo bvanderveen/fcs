@@ -9,7 +9,7 @@
 
 struct core_config {
     core_heading_setting heading_setting;
-    core_pitch_setting pitch_setting;
+    core_energy_setting energy_setting;
     core_turn_coordinator turn_coordinator;
     fcs_course_setting course_setting;
 };
