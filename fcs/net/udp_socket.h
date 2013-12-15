@@ -29,15 +29,13 @@ typedef void(*udp_data_handler)(udp_packet *, void *);
 struct udp_socket {
     int socket;
     udp_endpoint *broadcast;
-    udp_data_handler handler;
-    void *context;
 };
 typedef struct udp_socket udp_socket;
 
 udp_socket *udp_socket_alloc(udp_endpoint *listen, udp_endpoint *broadcast);
 void udp_socket_dealloc(udp_socket *s);
 
-void udp_socket_read(udp_socket *s, udp_data_handler handler);
+void udp_socket_read(udp_socket *s, udp_data_handler handler, void *context);
 void udp_socket_write(udp_socket *s, char *data, int count);
 
 #endif

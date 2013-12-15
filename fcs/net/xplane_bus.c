@@ -73,24 +73,46 @@ void message_xplane_data_handler_function(xplane_message_data *ms, int count, vo
 void message_json_handler_function(yajl_val j, void *context) {
     state *s = context;
 
-    yajl_val name = YAJL_GET_OBJECT(j)->values[0];
-    yajl_val value = YAJL_GET_OBJECT(j)->values[1];
+    printf("[message_json_handler_function] will read value type\n");
+    printf("[message_json_handler_function] value is %d\n", (unsigned int)j);
 
-    if (YAJL_IS_INTEGER(value))
-        state_set(s, YAJL_GET_STRING(name), (float)YAJL_GET_INTEGER(j));
-    else if (YAJL_IS_DOUBLE(value))
-        state_set(s, YAJL_GET_STRING(name), (float)YAJL_GET_DOUBLE(j));
-    else
+    printf("[message_json_handler_function] value type is %d\n", j->type);
+
+    if (!YAJL_IS_OBJECT(j)) {
+        printf("[message_json_handler_function] value was not an object, bailing out\n");
+        return;
+    }
+
+    printf("[message_json_handler_function] will get name\n");
+    yajl_val name = YAJL_GET_OBJECT(j)->values[0];
+    printf("[message_json_handler_function] did get name = %s\n", YAJL_GET_STRING(name));
+
+
+    printf("[message_json_handler_function] will get value\n");
+    yajl_val value = YAJL_GET_OBJECT(j)->values[1];
+    printf("[message_json_handler_function] did get value = %s\n", YAJL_GET_STRING(value));
+
+
+    if (YAJL_IS_INTEGER(value)) {
+        printf("[message_json_handler_function] value is integer\n");
+        state_set(s, YAJL_GET_STRING(name), (float)YAJL_GET_INTEGER(value));
+    }
+    else if (YAJL_IS_DOUBLE(value)) {
+        printf("[message_json_handler_function] value is double\n");
+        state_set(s, YAJL_GET_STRING(name), (float)YAJL_GET_DOUBLE(value));
+    }
+    else {
+        printf("[message_json_handler_function] value is complex\n");
         state_set_json(s, YAJL_GET_STRING(name), value);
+    }
 }
 
 void xplane_bus_read_sensors(xplane_socket *socket, state *state) {
-    socket->context = state;
-    xplane_socket_read(socket, message_xplane_data_handler_function);
+    xplane_socket_read(socket, message_xplane_data_handler_function, state);
 }
 
 void message_bus_read_json(json_socket *socket, state *state) {
-    printf("[message_bus_read_json] handler = %x\n", (unsigned int)message_json_handler_function);
-    socket->context = state;
-    json_socket_read(socket, message_json_handler_function);
+    printf("[message_bus_read_json] will call json_socket_read handler = %x\n", (unsigned int)message_json_handler_function);
+    json_socket_read(socket, message_json_handler_function, state);
+    printf("[message_bus_read_json] did call json_socket_read\n");
 }

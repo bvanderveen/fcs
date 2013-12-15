@@ -90,7 +90,7 @@ void udp_socket_dealloc(udp_socket *s) {
     free(s);
 }
 
-void udp_socket_read(udp_socket *s, udp_data_handler handler) {
+void udp_socket_read(udp_socket *s, udp_data_handler handler, void *context) {
     int buffer_length = 4 * 1024;
     char buffer[buffer_length];
     struct sockaddr_in peer_endpoint;
@@ -116,7 +116,7 @@ void udp_socket_read(udp_socket *s, udp_data_handler handler) {
     packet.count = bytes_read;
 
     printf("[udp_socket_read] 1\n");
-    handler(&packet, s->context);
+    handler(&packet, context);
     printf("[udp_socket_read] 2\n");
     
 }
