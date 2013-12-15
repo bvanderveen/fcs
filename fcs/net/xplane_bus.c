@@ -19,16 +19,16 @@ void xplane_bus_write_effectors(xplane_socket *socket, state *state) {
     xplane_message_data messages[2];
 
     messages[0].index = xplane_data_ail_elv_rud;
-    messages[0].data[0] = state_get(state, STATE_EFFECTOR_ELEVATOR);
-    messages[0].data[1] = state_get(state, STATE_EFFECTOR_AILERON);
-    messages[0].data[2] = state_get(state, STATE_EFFECTOR_RUDDER);
+    messages[0].data[0] = state_get_float(state, STATE_EFFECTOR_ELEVATOR);
+    messages[0].data[1] = state_get_float(state, STATE_EFFECTOR_AILERON);
+    messages[0].data[2] = state_get_float(state, STATE_EFFECTOR_RUDDER);
     messages[0].data[3] = 0;
     messages[0].data[4] = 0;
     messages[0].data[5] = 0;
     messages[0].data[6] = 0;
     messages[0].data[7] = 0;
 
-    float t = state_get(state, STATE_EFFECTOR_THROTTLE);
+    float t = state_get_float(state, STATE_EFFECTOR_THROTTLE);
     
     messages[1].index = xplane_data_throttle;
     messages[1].data[0] = t;
@@ -52,19 +52,19 @@ void message_xplane_data_handler_function(xplane_message_data *ms, int count, vo
 
         switch (message.index) {
             case xplane_data_pitch_roll_heading:
-                state_set(state, STATE_SENSOR_PITCH, message.data[0]);
-                state_set(state, STATE_SENSOR_ROLL, message.data[1]);
-                state_set(state, STATE_SENSOR_HEADING, message.data[2]);
+                state_set_float(state, STATE_SENSOR_PITCH, message.data[0]);
+                state_set_float(state, STATE_SENSOR_ROLL, message.data[1]);
+                state_set_float(state, STATE_SENSOR_HEADING, message.data[2]);
                 break;
             case xplane_data_lat_lon_alt:
-                state_set(state, STATE_SENSOR_LATITUDE, message.data[0]);
-                state_set(state, STATE_SENSOR_LONGITUDE, message.data[1]);
-                state_set(state, STATE_SENSOR_ALTITUDE, message.data[2]);
+                state_set_float(state, STATE_SENSOR_LATITUDE, message.data[0]);
+                state_set_float(state, STATE_SENSOR_LONGITUDE, message.data[1]);
+                state_set_float(state, STATE_SENSOR_ALTITUDE, message.data[2]);
                 break;
             case xplane_data_mach_vvi_g:
-                state_set(state, STATE_SENSOR_ACCEL_T, message.data[4]);
-                state_set(state, STATE_SENSOR_ACCEL_N, message.data[5]);
-                state_set(state, STATE_SENSOR_ACCEL_B, message.data[6]);
+                state_set_float(state, STATE_SENSOR_ACCEL_T, message.data[4]);
+                state_set_float(state, STATE_SENSOR_ACCEL_N, message.data[5]);
+                state_set_float(state, STATE_SENSOR_ACCEL_B, message.data[6]);
                 break;
         }
     }
@@ -83,27 +83,34 @@ void message_json_handler_function(yajl_val j, void *context) {
         return;
     }
 
-    printf("[message_json_handler_function] will get name\n");
-    yajl_val name = YAJL_GET_OBJECT(j)->values[0];
-    printf("[message_json_handler_function] did get name = %s\n", YAJL_GET_STRING(name));
+    int num_vals = YAJL_GET_OBJECT(j)->len;
+    for (int i = 0; i < num_vals; i++) 
+    {
+        char *name = YAJL_GET_OBJECT(j)->keys[i];
+        printf("[message_json_handler_function] did get name = %s\n", name);
 
+        yajl_val value = YAJL_GET_OBJECT(j)->values[i];
 
-    printf("[message_json_handler_function] will get value\n");
-    yajl_val value = YAJL_GET_OBJECT(j)->values[1];
-    printf("[message_json_handler_function] did get value = %s\n", YAJL_GET_STRING(value));
-
-
-    if (YAJL_IS_INTEGER(value)) {
-        printf("[message_json_handler_function] value is integer\n");
-        state_set(s, YAJL_GET_STRING(name), (float)YAJL_GET_INTEGER(value));
-    }
-    else if (YAJL_IS_DOUBLE(value)) {
-        printf("[message_json_handler_function] value is double\n");
-        state_set(s, YAJL_GET_STRING(name), (float)YAJL_GET_DOUBLE(value));
-    }
-    else {
-        printf("[message_json_handler_function] value is complex\n");
-        state_set_json(s, YAJL_GET_STRING(name), value);
+        if (YAJL_IS_INTEGER(value)) {
+            printf("[message_json_handler_function] value is integer\n");
+            state_set_int(s, name, YAJL_GET_INTEGER(value));
+        }
+        else if (YAJL_IS_DOUBLE(value)) {
+            printf("[message_json_handler_function] value is double\n");
+            state_set_float(s, name, (float)YAJL_GET_DOUBLE(value));
+        }
+        else if (YAJL_IS_TRUE(value)) {
+            printf("[message_json_handler_function] value is true\n");
+            state_set_int(s, name, 1);
+        }
+        else if (YAJL_IS_FALSE(value)) {
+            printf("[message_json_handler_function] value is false\n");
+            state_set_int(s, name, 0);
+        }
+        else {
+            printf("[message_json_handler_function] value is complex\n");
+            state_set_json(s, name, value);
+        }
     }
 }
 

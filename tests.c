@@ -47,89 +47,89 @@ int main() {
     udp_endpoint_init(&any_ep, INADDR_ANY, 0);
 
     
-    // TEST_GROUP("state")
-    // {
-    //     state *state = NULL;
-    //     IT_SHOULD("initialize state",
-    //     {
-    //         state = state_alloc(4);
+    TEST_GROUP("state")
+    {
+        state *state = NULL;
+        IT_SHOULD("initialize state",
+        {
+            state = state_alloc(4);
 
-    //         assert(state != NULL);
-    //     });
+            assert(state != NULL);
+        });
 
-    //     IT_SHOULD("store pi", {
-    //         const char *key = "PI";
+        IT_SHOULD("store pi", {
+            const char *key = "PI";
 
-    //         state_set(state, key, 3.14159);
-    //         float result = state_get(state, key);
+            state_set_float(state, key, 3.14159);
+            float result = state_get_float(state, key);
 
-    //         assert((result > 3.14158) && (result < 3.14160));
-    //     });
+            assert((result > 3.14158) && (result < 3.14160));
+        });
 
-    //     IT_SHOULD("store 42", {
-    //         const char *key = "fourtytwo";
+        IT_SHOULD("store 42", {
+            const char *key = "fourtytwo";
 
-    //         state_set(state, key, 42);
-    //         float result = state_get(state, key);
+            state_set_int(state, key, 42);
+            int result = state_get_int(state, key);
 
-    //         assert(result == 42);
-    //     });
+            assert(result == 42);
+        });
 
-    //     IT_SHOULD("store json", {
-    //         const char *key = "jaysahn";
+        IT_SHOULD("store json", {
+            const char *key = "jaysahn";
 
-    //         char *json = "{\"data\":123}";            
+            char *json = "{\"data\":123}";            
 
-    //         yajl_val v = yajl_tree_parse(json, NULL, 0);
+            yajl_val v = yajl_tree_parse(json, NULL, 0);
 
-    //         state_set_json(state, key, v);
-    //         yajl_val result = state_get_json(state, key);
+            state_set_json(state, key, v);
+            yajl_val result = state_get_json(state, key);
 
-    //         assert(YAJL_IS_OBJECT(result));
-    //         assert(strncmp(YAJL_GET_OBJECT(result)->keys[0], "data", 4) == 0);
-    //         assert(YAJL_GET_INTEGER(YAJL_GET_OBJECT(result)->values[0]) == 123);
-    //     });
+            assert(YAJL_IS_OBJECT(result));
+            assert(strncmp(YAJL_GET_OBJECT(result)->keys[0], "data", 4) == 0);
+            assert(YAJL_GET_INTEGER(YAJL_GET_OBJECT(result)->values[0]) == 123);
+        });
 
-    //     state_dealloc(state);
-    // }
+        state_dealloc(state);
+    }
 
     udp_packet *received_packet;
 
-    // TEST_GROUP("udp")
-    // {
-    //     udp_endpoint ep;
-    //     udp_endpoint_init(&ep, ipv4_address_from_string("192.168.1.1"), 90);
+    TEST_GROUP("udp")
+    {
+        udp_endpoint ep;
+        udp_endpoint_init(&ep, ipv4_address_from_string("192.168.1.1"), 90);
 
-    //     IT_SHOULD("get address", {
-    //         uint32_t addr = udp_endpoint_address(&ep);
-    //         assert(addr == 0xc0a80101);
-    //     });
+        IT_SHOULD("get address", {
+            uint32_t addr = udp_endpoint_address(&ep);
+            assert(addr == 0xc0a80101);
+        });
 
-    //     IT_SHOULD("get port", {
-    //         int port = udp_endpoint_port(&ep);
-    //         assert(port == 90);
-    //     });
+        IT_SHOULD("get port", {
+            int port = udp_endpoint_port(&ep);
+            assert(port == 90);
+        });
 
-    //     udp_endpoint destination_ep;
-    //     udp_endpoint_init(&destination_ep, INADDR_ANY, 49001);
-    //     udp_endpoint source_ep;
-    //     udp_endpoint_init(&source_ep, INADDR_ANY, 49002);
+        udp_endpoint destination_ep;
+        udp_endpoint_init(&destination_ep, INADDR_ANY, 49001);
+        udp_endpoint source_ep;
+        udp_endpoint_init(&source_ep, INADDR_ANY, 49002);
 
-    //     IT_SHOULD("round trip data", {
-    //         udp_socket *listener = udp_socket_alloc(&destination_ep, &source_ep, test_udp_data_handler_function, &received_packet);
-    //         udp_socket *broadcaster = udp_socket_alloc(&source_ep, &destination_ep, NULL, NULL);
+        IT_SHOULD("round trip data", {
+            udp_socket *listener = udp_socket_alloc(&destination_ep, &source_ep);
+            udp_socket *broadcaster = udp_socket_alloc(&source_ep, &destination_ep);
 
-    //         char *packet_data = "some data";
-    //         udp_socket_write(broadcaster, packet_data, 9);
-    //         udp_socket_read(listener);
+            char *packet_data = "some data";
+            udp_socket_write(broadcaster, packet_data, 9);
+            udp_socket_read(listener, test_udp_data_handler_function, &received_packet);
 
-    //         assert(udp_endpoint_port(received_packet->ep) == 49002);
-    //         assert(strncmp(received_packet->data, packet_data, 9) == 0);
+            assert(udp_endpoint_port(received_packet->ep) == 49002);
+            assert(strncmp(received_packet->data, packet_data, 9) == 0);
 
-    //         udp_socket_dealloc(listener);
-    //         udp_socket_dealloc(broadcaster);
-    //     });
-    // }
+            udp_socket_dealloc(listener);
+            udp_socket_dealloc(broadcaster);
+        });
+    }
 
     xplane_message_data *received_messages = NULL;
 
@@ -262,17 +262,17 @@ int main() {
                 xplane_bus_read_sensors(xplane_sock, state);
                 printf("3\n");
 
-                assert_float(state_get(state, STATE_SENSOR_PITCH), .9);
-                assert_float(state_get(state, STATE_SENSOR_ROLL), .8);
-                assert_float(state_get(state, STATE_SENSOR_HEADING), .7);
+                assert_float(state_get_float(state, STATE_SENSOR_PITCH), .9);
+                assert_float(state_get_float(state, STATE_SENSOR_ROLL), .8);
+                assert_float(state_get_float(state, STATE_SENSOR_HEADING), .7);
 
-                assert_float(state_get(state, STATE_SENSOR_LATITUDE), 42);
-                assert_float(state_get(state, STATE_SENSOR_LONGITUDE), -122);
-                assert_float(state_get(state, STATE_SENSOR_ALTITUDE), 3000);
+                assert_float(state_get_float(state, STATE_SENSOR_LATITUDE), 42);
+                assert_float(state_get_float(state, STATE_SENSOR_LONGITUDE), -122);
+                assert_float(state_get_float(state, STATE_SENSOR_ALTITUDE), 3000);
 
-                assert_float(state_get(state, STATE_SENSOR_ACCEL_T), .5);
-                assert_float(state_get(state, STATE_SENSOR_ACCEL_N), -1);
-                assert_float(state_get(state, STATE_SENSOR_ACCEL_B), .1);
+                assert_float(state_get_float(state, STATE_SENSOR_ACCEL_T), .5);
+                assert_float(state_get_float(state, STATE_SENSOR_ACCEL_N), -1);
+                assert_float(state_get_float(state, STATE_SENSOR_ACCEL_B), .1);
             }
 
             printf("7\n");
@@ -295,10 +295,10 @@ int main() {
             xplane_socket *xplane_sock = xplane_socket_alloc(wrapped);
 
             {
-                state_set(state, STATE_EFFECTOR_AILERON, .4);
-                state_set(state, STATE_EFFECTOR_ELEVATOR, .5);
-                state_set(state, STATE_EFFECTOR_RUDDER, .6);
-                state_set(state, STATE_EFFECTOR_THROTTLE, .7);
+                state_set_float(state, STATE_EFFECTOR_AILERON, .4);
+                state_set_float(state, STATE_EFFECTOR_ELEVATOR, .5);
+                state_set_float(state, STATE_EFFECTOR_RUDDER, .6);
+                state_set_float(state, STATE_EFFECTOR_THROTTLE, .7);
 
                 xplane_bus_write_effectors(xplane_sock, state);
 
@@ -343,14 +343,29 @@ int main() {
             char *xplane_data_bytes = malloc(5 + sizeof(xplane_message_data) * 3);
             
             {
-                char *json = "{\"name\":\"state.butts.ability\",\"value\":1024.0}";
+                char *json = "{" \
+                    "\"a_float\":1024.0,"\
+                    "\"an_int\":42,"\
+                    "\"a_boolean_true\":true," \
+                    "\"a_boolean_false\":false" \
+                    "}";
 
                 udp_socket_write(raw, json, strlen(json));
             
                 message_bus_read_json(json_sock, state);
             
-                float result = state_get(state, "state.butts.ability");
-                assert_float(result, 1024);
+                int an_int = state_get_int(state, "an_int");
+                assert(an_int == 42);
+
+                int a_bool = state_get_int(state, "a_boolean_true");
+                assert(a_bool != 0);
+
+                int a_bool_false = state_get_int(state, "a_boolean_false");
+                assert(a_bool_false == 0);
+
+                float a_float = state_get_float(state, "a_float");
+                assert_float(a_float, 1024);
+
             }
 
             udp_socket_dealloc(wrapped);

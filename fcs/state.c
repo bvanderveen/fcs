@@ -27,7 +27,7 @@ state_value *state_find_by_name(state *s, const char *name) {
     return NULL;
 }
 
-void state_set(state *s, const char *name, float value) {
+void state_set_float(state *s, const char *name, float value) {
     state_value *v = state_find_by_name(s, name);
 
     if (!v) {
@@ -45,15 +45,42 @@ void state_set(state *s, const char *name, float value) {
     v->u.float_value = value;
 }
 
-float state_get(state *s, const char *name) {
+float state_get_float(state *s, const char *name) {
+    state_value *v = state_find_by_name(s, name);
+
+    assert(v != NULL);
+    assert(v->type == state_value_type_float);
+
+    return v->u.float_value;
+}
+
+void state_set_int(state *s, const char *name, int value) {
+    state_value *v = state_find_by_name(s, name);
+
+    if (!v) {
+        if (s->last > s->count)
+            assert(0);
+
+        v = &s->values[s->last];
+        s->last++;
+    }
+    else if (v->type != state_value_type_int)
+        assert(0);
+
+    v->name = name;
+    v->type = state_value_type_int;
+    v->u.int_value = value;
+}
+
+int state_get_int(state *s, const char *name) {
     state_value *v = state_find_by_name(s, name);
 
     if (v == NULL)
         assert(0);
-    else if (v->type != state_value_type_float)
+    else if (v->type != state_value_type_int)
         assert(0);
 
-    return v->u.float_value;
+    return v->u.int_value;
 }
 
 
