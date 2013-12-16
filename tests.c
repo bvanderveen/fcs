@@ -16,7 +16,7 @@ HOW; \
 printf("OK\n"); \
 }
 
-#define assert_float(ACTUAL, EXPECTED) assert(((ACTUAL) > ((EXPECTED) - .01)) && ((ACTUAL) < ((EXPECTED) + .01)))
+#define assert_float(ACTUAL, EXPECTED) assert(((ACTUAL) > ((EXPECTED) - .001)) && ((ACTUAL) < ((EXPECTED) + .001)))
 
 void test_udp_data_handler_function(udp_packet *p, void *context) {
     udp_packet **packet = context;
@@ -347,7 +347,8 @@ int main() {
                     "\"a_float\":1024.0,"\
                     "\"an_int\":42,"\
                     "\"a_boolean_true\":true," \
-                    "\"a_boolean_false\":false" \
+                    "\"a_boolean_false\":false," \
+                    "\"some_waypoints\":[[-122.2, 47.7],[-122.25, 47.75]]"\
                     "}";
 
                 udp_socket_write(raw, json, strlen(json));
@@ -366,6 +367,20 @@ int main() {
                 float a_float = state_get_float(state, "a_float");
                 assert_float(a_float, 1024);
 
+                yajl_val waypoints = state_get_json(state, "some_waypoints");
+
+                assert(YAJL_IS_ARRAY(waypoints));
+                assert(YAJL_GET_ARRAY(waypoints)->len == 2);
+
+                yajl_val w0 = YAJL_GET_ARRAY(waypoints)->values[0];
+                assert(YAJL_IS_ARRAY(w0));
+                assert_float(YAJL_GET_DOUBLE(YAJL_GET_ARRAY(w0)->values[0]), -122.2);
+                assert_float(YAJL_GET_DOUBLE(YAJL_GET_ARRAY(w0)->values[1]), 47.7);
+
+                yajl_val w1 = YAJL_GET_ARRAY(waypoints)->values[1];
+                assert(YAJL_IS_ARRAY(w1));
+                assert_float(YAJL_GET_DOUBLE(YAJL_GET_ARRAY(w1)->values[0]), -122.25);
+                assert_float(YAJL_GET_DOUBLE(YAJL_GET_ARRAY(w1)->values[1]), 47.75);
             }
 
             udp_socket_dealloc(wrapped);

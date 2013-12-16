@@ -70,7 +70,7 @@ int udp_endpoint_socket(udp_endpoint *endpoint) {
 }
 
 udp_socket *udp_socket_alloc(udp_endpoint *listen, udp_endpoint *broadcast) {
-    udp_socket *result = (udp_socket *)malloc(sizeof(udp_socket));
+    udp_socket *result = malloc(sizeof(udp_socket));
     int socket = udp_endpoint_socket(listen);
     
     if(socket == -1) {

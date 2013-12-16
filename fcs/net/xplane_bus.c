@@ -86,7 +86,7 @@ void message_json_handler_function(yajl_val j, void *context) {
     int num_vals = YAJL_GET_OBJECT(j)->len;
     for (int i = 0; i < num_vals; i++) 
     {
-        char *name = YAJL_GET_OBJECT(j)->keys[i];
+        const char *name = YAJL_GET_OBJECT(j)->keys[i];
         printf("[message_json_handler_function] did get name = %s\n", name);
 
         yajl_val value = YAJL_GET_OBJECT(j)->values[i];
