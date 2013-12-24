@@ -1,5 +1,6 @@
 #include "xplane_bus.h"
 #include <stdio.h>
+#include <assert.h>
 
 enum xplane_data_index {
     xplane_data_speeds = 3,
@@ -44,7 +45,6 @@ void xplane_bus_write_effectors(xplane_socket *socket, state *state) {
 }
 
 void message_xplane_data_handler_function(xplane_message_data *ms, int count, void *context) {
-    printf("butttttttt----!!!!\n");
     state *state = context;
 
      for (int i = 0; i < count; i++) {
@@ -68,6 +68,10 @@ void message_xplane_data_handler_function(xplane_message_data *ms, int count, vo
                 break;
         }
     }
+}
+
+void xplane_bus_read_sensors(xplane_socket *socket, state *state) {
+    xplane_socket_read(socket, message_xplane_data_handler_function, state);
 }
 
 void message_json_handler_function(yajl_val j, void *context) {
@@ -114,12 +118,54 @@ void message_json_handler_function(yajl_val j, void *context) {
     }
 }
 
-void xplane_bus_read_sensors(xplane_socket *socket, state *state) {
-    xplane_socket_read(socket, message_xplane_data_handler_function, state);
-}
-
 void message_bus_read_json(json_socket *socket, state *state) {
     printf("[message_bus_read_json] will call json_socket_read handler = %x\n", (unsigned int)message_json_handler_function);
     json_socket_read(socket, message_json_handler_function, state);
     printf("[message_bus_read_json] did call json_socket_read\n");
+}
+
+void message_bus_write_json(yajl_gen g, void *context) {
+    state *state = context;
+
+    yajl_val output_values = state_get_json(state, STATE_OUTPUT_VALUES);
+
+    assert(YAJL_IS_ARRAY(output_values));
+
+    yajl_gen_map_open(g);
+
+    int len = YAJL_GET_ARRAY(output_values)->len;
+    for (int i = 0; i < len; i++) {
+        char *k = YAJL_GET_STRING(YAJL_GET_ARRAY(output_values)->values[i]);
+
+        state_value_type type = state_get_value_type(state, k);
+
+        yajl_gen_string(g, k, strlen(k));
+
+        float float_value;
+        int int_value;
+        yajl_val json_value;
+        switch (type) {
+            case state_value_type_float:
+                float_value = state_get_float(state, k);
+                yajl_gen_double(g, (double)float_value);
+                break;
+            case state_value_type_int:
+                int_value = state_get_int(state, k);
+                yajl_gen_integer(g, int_value);
+                break;
+            case state_value_type_json:
+                json_value = state_get_json(state, k);
+                json_write_value(g, json_value);
+                break;
+            default:
+                assert(0);
+                break;
+        }
+    }
+
+    yajl_gen_map_close(g);
+}
+
+void message_bus_write_values(json_socket *socket, state *state) {
+    json_socket_write(socket, message_bus_write_json, state);
 }

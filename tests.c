@@ -390,5 +390,41 @@ int main() {
             json_socket_dealloc(json_sock);
             state_dealloc(state);
         });
+
+        IT_SHOULD("write selected output values to downstream monitor", {
+
+            state *state = state_alloc(13);
+            udp_socket *raw = udp_socket_alloc(&any_ep, &xplane_broadcast_ep);
+            udp_socket *wrapped = udp_socket_alloc(&xplane_broadcast_ep, &any_ep);
+            json_socket *json_sock = json_socket_alloc(wrapped);
+
+            {
+                state_set_float(state, "a_float", 3.14);
+                state_set_int(state, "an_int", 42);
+
+                yajl_val waypoints_json = yajl_tree_parse("[[-122.2, 47.7], [-122.3, 47.8]]", NULL, 0);
+                state_set_json(state, "some_waypoints", waypoints_json);
+
+                char *json = "{" \
+                    "\"state.output.values\":[\"an_int\", \"a_float\", \"some_waypoints\"]"\
+                    "}";
+
+                udp_socket_write(raw, json, strlen(json));
+                message_bus_read_json(json_sock, state);
+
+                message_bus_write_values(json_sock, state);
+
+                udp_socket_read(raw, test_udp_data_handler_function, &received_packet);
+
+                char *expected = "{\"a_float\":3.14,\"an_int\":42,\"some_waypoints\":[[-122.2,47.7],[-122.3,47.8]]}";
+                int len = strlen(expected);
+                assert(strncmp(received_packet->data, expected, len) == 0);
+            }
+
+            udp_socket_dealloc(wrapped);
+            udp_socket_dealloc(raw);
+            json_socket_dealloc(json_sock);
+            state_dealloc(state);
+        });
     }
 }
