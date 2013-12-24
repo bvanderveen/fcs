@@ -27,6 +27,12 @@ state_value *state_find_by_name(state *s, const char *name) {
     return NULL;
 }
 
+state_value_type state_get_value_type(state *s, const char *name) {
+    state_value *v = state_find_by_name(s, name);
+
+    return v->type;
+}
+
 void state_set_float(state *s, const char *name, float value) {
     state_value *v = state_find_by_name(s, name);
 

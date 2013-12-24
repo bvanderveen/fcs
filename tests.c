@@ -63,6 +63,7 @@ int main() {
             state_set_float(state, key, 3.14159);
             float result = state_get_float(state, key);
 
+            assert(state_get_value_type(state, key) == state_value_type_float);
             assert((result > 3.14158) && (result < 3.14160));
         });
 
@@ -70,6 +71,7 @@ int main() {
             const char *key = "fourtytwo";
 
             state_set_int(state, key, 42);
+            assert(state_get_value_type(state, key) == state_value_type_int);
             int result = state_get_int(state, key);
 
             assert(result == 42);
@@ -85,6 +87,7 @@ int main() {
             state_set_json(state, key, v);
             yajl_val result = state_get_json(state, key);
 
+            assert(state_get_value_type(state, key) == state_value_type_json);
             assert(YAJL_IS_OBJECT(result));
             assert(strncmp(YAJL_GET_OBJECT(result)->keys[0], "data", 4) == 0);
             assert(YAJL_GET_INTEGER(YAJL_GET_OBJECT(result)->values[0]) == 123);
@@ -340,7 +343,6 @@ int main() {
             udp_socket *raw = udp_socket_alloc(&any_ep, &xplane_broadcast_ep);
             udp_socket *wrapped = udp_socket_alloc(&xplane_broadcast_ep, &any_ep);
             json_socket *json_sock = json_socket_alloc(wrapped);
-            char *xplane_data_bytes = malloc(5 + sizeof(xplane_message_data) * 3);
             
             {
                 char *json = "{" \
@@ -387,7 +389,6 @@ int main() {
             udp_socket_dealloc(raw);
             json_socket_dealloc(json_sock);
             state_dealloc(state);
-            free(xplane_data_bytes);
         });
     }
 }

@@ -29,6 +29,8 @@ typedef struct state state;
 state *state_alloc(int count);
 void state_dealloc(state *s);
 
+state_value_type state_get_value_type(state *s, const char *name);
+
 void state_set_float(state *s, const char *name, float value);
 float state_get_float(state *s, const char *name);
 
@@ -37,6 +39,8 @@ int state_get_int(state *s, const char *name);
 
 void state_set_json(state *s, const char *name, yajl_val value);
 yajl_val state_get_json(state *s, const char *name);
+
+#define STATE_OUTPUT_VALUES "state.output.values"
 
 #define STATE_EFFECTOR_AILERON "state.effector.aileron"
 #define STATE_EFFECTOR_ELEVATOR "state.effector.elevator"
