@@ -25,7 +25,7 @@ This will be a flight control system for flying robots.
 
 Written C to leverage the LLVM toolchain and target embedded systems. Higher level applications (glass cockpit, flight planner) will be writ in Clojure.
 
-System maintains a state singleton in memory that can be read or written to over UDP. At the start of the loop the system reads values from the network, updates the state as necessary. Then the control phase steps its algorithm forward in time according to the values read from the system state. Finally, any selected output values will be broadcast.
+System maintains a state singleton in memory that can be read or written to over UDP. At the start of the loop the system reads values from the network, updates the state as necessary. Then the control phase steps its algorithm forward in time according to the values read from the system state. Finally, any selected output values are broadcast.
 
 ## Setting system state
 
