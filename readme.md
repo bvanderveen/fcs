@@ -35,8 +35,9 @@ Huck UDP packets of JSON at that port. For example, you could just hook a joysti
 
     {
       "state.effector.aileron": .12,
+      "state.effector.elevator": .21,
       "state.effector.rudder": .11,
-      "state.effector.elevator": .21
+      "state.effector.throttle": .42
     }
  
 ## Getting system values
