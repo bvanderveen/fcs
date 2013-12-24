@@ -1,5 +1,6 @@
 #import "udp_socket.h"
 #import "yajl/yajl_tree.h"
+#import "yajl/yajl_gen.h"
 
 #ifndef __FCS_JSON_SOCKET_H
 #define __FCS_JSON_SOCKET_H
