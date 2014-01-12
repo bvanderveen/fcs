@@ -3,17 +3,18 @@
 #include "fcs/net/json_socket.h"
 #include "fcs/net/xplane_socket.h"
 #include "fcs/net/xplane_bus.h"
+#include "fcs/debug.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
 
-#define TEST_GROUP(T) {printf("--- " T "\n");}
+#define TEST_GROUP(T) {printf("\033[1;36m--- " T "\033[0m\n");}
 #define IT_SHOULD(WHAT, HOW) { \
-printf("it should " WHAT "..."); \
+printf("\033[1;34mit should " WHAT "...\033[0m"); \
 HOW; \
-printf("OK\n"); \
+printf("\033[1;32mOK\033[0m\n"); \
 }
 
 #define assert_float(ACTUAL, EXPECTED) assert(((ACTUAL) > ((EXPECTED) - .001)) && ((ACTUAL) < ((EXPECTED) + .001)))
@@ -232,17 +233,17 @@ int main() {
         };
 
         IT_SHOULD("read sensors from xplane to state", {
-            printf("1\n");
+            LLog("1\n");
             state *state = state_alloc(13);
-            printf("2\n");
+            LLog("2\n");
             udp_socket *raw = udp_socket_alloc(&any_ep, &xplane_broadcast_ep);
-            printf("3\n");
+            LLog("3\n");
             udp_socket *wrapped = udp_socket_alloc(&xplane_broadcast_ep, &any_ep);
-            printf("4\n");
+            LLog("4\n");
             xplane_socket *xplane_sock = xplane_socket_alloc(wrapped);
-            printf("5\n");
+            LLog("5\n");
             char *xplane_data_bytes = malloc(5 + sizeof(xplane_message_data) * 3);
-            printf("6\n");
+            LLog("6\n");
 
             {
                 char *p = xplane_data_bytes;
@@ -258,12 +259,12 @@ int main() {
 
                 memcpy(p, &mock_xplane_data[2], sizeof(xplane_message_data));
 
-                printf("1\n");
+                LLog("1\n");
                 udp_socket_write(raw, xplane_data_bytes, sizeof(xplane_message_data) * 3 + 5);
-                printf("2\n");
+                LLog("2\n");
 
                 xplane_bus_read_sensors(xplane_sock, state);
-                printf("3\n");
+                LLog("3\n");
 
                 assert_float(state_get_float(state, STATE_SENSOR_PITCH), .9);
                 assert_float(state_get_float(state, STATE_SENSOR_ROLL), .8);
@@ -278,17 +279,17 @@ int main() {
                 assert_float(state_get_float(state, STATE_SENSOR_ACCEL_B), .1);
             }
 
-            printf("7\n");
+            LLog("7\n");
             udp_socket_dealloc(wrapped);
-            printf("8\n");
+            LLog("8\n");
             udp_socket_dealloc(raw);
-            printf("9\n");
+            LLog("9\n");
             xplane_socket_dealloc(xplane_sock);
-            printf("10\n");
+            LLog("10\n");
             state_dealloc(state);
-            printf("11\n");
+            LLog("11\n");
             free(xplane_data_bytes);
-            printf("12\n");
+            LLog("12\n");
         });
 
         IT_SHOULD("write effectors from state to xplane", {
@@ -345,7 +346,7 @@ int main() {
             json_socket *json_sock = json_socket_alloc(wrapped);
             
             {
-                char *json = "{" \
+                char *json2 = "{" \
                     "\"a_float\":1024.0,"\
                     "\"an_int\":42,"\
                     "\"a_boolean_true\":true," \
@@ -353,7 +354,9 @@ int main() {
                     "\"some_waypoints\":[[-122.2, 47.7],[-122.25, 47.75]]"\
                     "}";
 
-                udp_socket_write(raw, json, strlen(json));
+                LLog("len = %d", strlen(json2));
+
+                udp_socket_write(raw, json2, strlen(json2));
             
                 message_bus_read_json(json_sock, state);
             

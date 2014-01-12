@@ -77,13 +77,13 @@ void xplane_bus_read_sensors(xplane_socket *socket, state *state) {
 void message_json_handler_function(yajl_val j, void *context) {
     state *s = context;
 
-    printf("[message_json_handler_function] will read value type\n");
-    printf("[message_json_handler_function] value is %d\n", (unsigned int)j);
+    LLog("[message_json_handler_function] will read value type\n");
+    LLog("[message_json_handler_function] value is %d\n", (unsigned int)j);
 
-    printf("[message_json_handler_function] value type is %d\n", j->type);
+    LLog("[message_json_handler_function] value type is %d\n", j->type);
 
     if (!YAJL_IS_OBJECT(j)) {
-        printf("[message_json_handler_function] value was not an object, bailing out\n");
+        LLog("[message_json_handler_function] value was not an object, bailing out\n");
         return;
     }
 
@@ -91,37 +91,37 @@ void message_json_handler_function(yajl_val j, void *context) {
     for (int i = 0; i < num_vals; i++) 
     {
         const char *name = YAJL_GET_OBJECT(j)->keys[i];
-        printf("[message_json_handler_function] did get name = %s\n", name);
+        LLog("[message_json_handler_function] did get name = %s\n", name);
 
         yajl_val value = YAJL_GET_OBJECT(j)->values[i];
 
         if (YAJL_IS_INTEGER(value)) {
-            printf("[message_json_handler_function] value is integer\n");
+            LLog("[message_json_handler_function] value is integer\n");
             state_set_int(s, name, YAJL_GET_INTEGER(value));
         }
         else if (YAJL_IS_DOUBLE(value)) {
-            printf("[message_json_handler_function] value is double\n");
+            LLog("[message_json_handler_function] value is double\n");
             state_set_float(s, name, (float)YAJL_GET_DOUBLE(value));
         }
         else if (YAJL_IS_TRUE(value)) {
-            printf("[message_json_handler_function] value is true\n");
+            LLog("[message_json_handler_function] value is true\n");
             state_set_int(s, name, 1);
         }
         else if (YAJL_IS_FALSE(value)) {
-            printf("[message_json_handler_function] value is false\n");
+            LLog("[message_json_handler_function] value is false\n");
             state_set_int(s, name, 0);
         }
         else {
-            printf("[message_json_handler_function] value is complex\n");
+            LLog("[message_json_handler_function] value is complex\n");
             state_set_json(s, name, value);
         }
     }
 }
 
 void message_bus_read_json(json_socket *socket, state *state) {
-    printf("[message_bus_read_json] will call json_socket_read handler = %x\n", (unsigned int)message_json_handler_function);
+    LLog("[message_bus_read_json] will call json_socket_read handler = %x\n", (unsigned int)message_json_handler_function);
     json_socket_read(socket, message_json_handler_function, state);
-    printf("[message_bus_read_json] did call json_socket_read\n");
+    LLog("[message_bus_read_json] did call json_socket_read\n");
 }
 
 void message_bus_write_json(yajl_gen g, void *context) {

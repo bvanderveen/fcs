@@ -6,6 +6,7 @@ fcs-main: yajl-static
 	gcc -g -std=c99 -o fcs-main.o \
 	-Iyajl/yajl-2.0.5/include \
 	yajl/yajl-2.0.5/lib/libyajl_s.a \
+	fcs/debug.c \
 	fcs/state.c \
 	fcs/json.c \
 	fcs/net/udp_socket.c \
@@ -16,8 +17,10 @@ fcs-main: yajl-static
 
 fcs-test: yajl-static
 	gcc -g -std=c99 -o fcs-tests.o \
+	-DDEBUG \
 	-Iyajl/yajl-2.0.5/include \
 	yajl/yajl-2.0.5/lib/libyajl_s.a \
+	fcs/debug.c \
 	fcs/state.c \
 	fcs/json.c \
 	fcs/net/udp_socket.c \
