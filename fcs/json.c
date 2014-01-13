@@ -38,7 +38,7 @@ void json_write_value(yajl_gen g, yajl_val value) {
 
         int len = YAJL_GET_ARRAY(value)->len;
         for (int i = 0; i < len; i++) {
-            json_write_value(g, YAJL_GET_OBJECT(value)->values[i]);
+            json_write_value(g, YAJL_GET_ARRAY(value)->values[i]);
         }
 
         yajl_gen_array_close(g);
