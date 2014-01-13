@@ -1,7 +1,7 @@
 #include "udp_socket.h"
 
-#ifndef __XPLANE_H
-#define __XPLANE_H
+#ifndef __FCS_XPLANE_SOCKET_H
+#define __FCS_XPLANE_SOCKET_H
 
 struct xplane_message_header
 {

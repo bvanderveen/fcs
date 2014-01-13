@@ -1,7 +1,7 @@
 #include <arpa/inet.h>
 
-#ifndef __FCS_UDP_H
-#define __FCS_UDP_H
+#ifndef __FCS_UDP_SOCKET_H
+#define __FCS_UDP_SOCKET_H
 
 struct udp_endpoint {
 	struct sockaddr_in ep;
