@@ -3,6 +3,7 @@
 #include "fcs/net/json_socket.h"
 #include "fcs/net/xplane_socket.h"
 #include "fcs/bus/xplane.h"
+#include "fcs/bus/message.h"
 #include "fcs/debug.h"
 #include <assert.h>
 #include <stdio.h>

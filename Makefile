@@ -13,6 +13,7 @@ fcs-main: yajl-static
 	fcs/net/json_socket.c \
 	fcs/net/xplane_socket.c \
 	fcs/bus/xplane.c \
+	fcs/bus/message.c \
 	main.c
 
 fcs-test: yajl-static
@@ -27,6 +28,7 @@ fcs-test: yajl-static
 	fcs/net/json_socket.c \
 	fcs/net/xplane_socket.c \
 	fcs/bus/xplane.c \
+	fcs/bus/message.c \
 	tests.c
 
 run: fcs-main
