@@ -2,8 +2,8 @@
 #include "../net/json_socket.h"
 #include "../state.h"
 
-#ifndef __XPLANE_BUS_H
-#define __XPLANE_BUS_H
+#ifndef __FCS_BUS_XPLANE_H
+#define __FCS_BUS_XPLANE_H
 
 void xplane_bus_write_effectors(xplane_socket *socket, state *state);
 void message_bus_read_json(json_socket *socket, state *state);

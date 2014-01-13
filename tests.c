@@ -2,7 +2,7 @@
 #include "fcs/net/udp_socket.h"
 #include "fcs/net/json_socket.h"
 #include "fcs/net/xplane_socket.h"
-#include "fcs/bus/xplane_bus.h"
+#include "fcs/bus/xplane.h"
 #include "fcs/debug.h"
 #include <assert.h>
 #include <stdio.h>
