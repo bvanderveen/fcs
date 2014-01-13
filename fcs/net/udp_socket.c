@@ -115,9 +115,9 @@ void udp_socket_read(udp_socket *s, udp_data_handler handler, void *context) {
     packet.data = (char *)&buffer;
     packet.count = bytes_read;
 
-    LLog("[udp_socket_read] 1\n");
+    LLog("[udp_socket_read] will call handler\n");
     handler(&packet, context);
-    LLog("[udp_socket_read] 2\n");
+    LLog("[udp_socket_read] did call handler\n");
     
 }
 
