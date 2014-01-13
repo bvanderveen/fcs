@@ -44,6 +44,12 @@ int main() {
     udp_endpoint xplane_broadcast_ep;
     udp_endpoint_init(&xplane_broadcast_ep, INADDR_ANY, 49001);
 
+    udp_endpoint upstream_controller_broadcast_ep;
+    udp_endpoint_init(&upstream_controller_broadcast_ep, INADDR_ANY, 49002);
+
+    udp_endpoint monitor_listen_ep;
+    udp_endpoint_init(&monitor_listen_ep, INADDR_ANY, 49003);
+
     udp_endpoint any_ep;
     udp_endpoint_init(&any_ep, INADDR_ANY, 0);
 
@@ -397,19 +403,24 @@ int main() {
         IT_SHOULD("write selected output values to downstream monitor", {
 
             state *state = state_alloc(13);
-            udp_socket *raw = udp_socket_alloc(&any_ep, &xplane_broadcast_ep);
-            udp_socket *wrapped = udp_socket_alloc(&xplane_broadcast_ep, &any_ep);
+            udp_socket *raw = udp_socket_alloc(&monitor_listen_ep, &xplane_broadcast_ep);
+            udp_socket *wrapped = udp_socket_alloc(&xplane_broadcast_ep, &monitor_listen_ep);
             json_socket *json_sock = json_socket_alloc(wrapped);
 
             {
+                state_set_float(state, "should_not_appear", 69);
                 state_set_float(state, "a_float", 3.14);
                 state_set_int(state, "an_int", 42);
 
                 yajl_val waypoints_json = yajl_tree_parse("[[-122.2, 47.7], [-122.3, 47.8]]", NULL, 0);
                 state_set_json(state, "some_waypoints", waypoints_json);
 
+
+                yajl_val dict_json = yajl_tree_parse("{\"foo\":\"bar\", \"number\": 128, \"array\": [1,2]}", NULL, 0);
+                state_set_json(state, "some_dict", dict_json);
+
                 char *json = "{" \
-                    "\"state.output.values\":[\"an_int\", \"a_float\", \"some_waypoints\"]"\
+                    "\"state.output.values\":[\"an_int\", \"a_float\", \"some_waypoints\", \"some_dict\"]"\
                     "}";
 
                 udp_socket_write(raw, json, strlen(json));
@@ -419,7 +430,7 @@ int main() {
 
                 udp_socket_read(raw, test_udp_data_handler_function, &received_packet);
 
-                char *expected = "{\"a_float\":3.14,\"an_int\":42,\"some_waypoints\":[[-122.2,47.7],[-122.3,47.8]]}";
+                char *expected = "{\"an_int\":42,\"a_float\":3.1400001049041748047,\"some_waypoints\":[[-122.20000000000000284,47.700000000000002842],[-122.29999999999999716,47.799999999999997158]],\"some_dict\":{\"foo\":\"bar\",\"number\":128,\"array\":[1,2]}}";
                 int len = strlen(expected);
                 assert(strncmp(received_packet->data, expected, len) == 0);
             }
