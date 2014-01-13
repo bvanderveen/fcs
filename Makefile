@@ -12,7 +12,7 @@ fcs-main: yajl-static
 	fcs/net/udp_socket.c \
 	fcs/net/json_socket.c \
 	fcs/net/xplane_socket.c \
-	fcs/net/xplane_bus.c \
+	fcs/bus/xplane_bus.c \
 	main.c
 
 fcs-test: yajl-static
@@ -26,7 +26,7 @@ fcs-test: yajl-static
 	fcs/net/udp_socket.c \
 	fcs/net/json_socket.c \
 	fcs/net/xplane_socket.c \
-	fcs/net/xplane_bus.c \
+	fcs/bus/xplane_bus.c \
 	tests.c
 
 run: fcs-main
