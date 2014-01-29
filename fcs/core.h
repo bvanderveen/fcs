@@ -1,44 +1,23 @@
+#include "state.h"
+
 #ifndef __FCS_CORE
 #define __FCS_CORE
 
-struct core_sensor_state {
-    float 
-    lat, lon, alt,
-    cas, vvi;
-    aT, aN, aB,
-    pitch, roll, heading,
+typedef void(*core_callback)(state *, void *);
+
+struct core_callbacks {
+    core_callback read_sensors;
+    core_callback read_commands;
+    core_callback write_effectors;
+    core_callback write_indicators;
 };
-typedef struct core_sensor_state core_sensor_state;
+typedef struct core_callbacks core_callbacks;
 
-void core_sensor_state_print(core_sensor_state *state);
-
-struct core_effector_state {
-    float
-    elv,
-    ail,
-    rud,
-    throttle;
+struct core_control_state {
+	fcs_course_state course_state;
 };
-typedef struct core_effector_state core_effector_state;
+typedef struct core_control_state state;
 
-// struct core_path {
-//     core_point *points;
-//     int count;
-// };
-// typedef struct core_path core_path;
-
-// struct core_point {
-//     float
-//     lat,
-//     lon;
-// };
-// typedef struct core_point core_point;
-
-struct core_context {
-    core_sensor_state sensor_state;
-    core_effector_state effector_state;
-};
-typedef struct core_context core_context;
-
+void core_loop(core_callbacks *callbacks, state *state, core_control_state *control_state, struct timeval t0, struct timeval *t1, void *context);
 
 #endif
