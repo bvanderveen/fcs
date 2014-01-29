@@ -1,96 +1,53 @@
 (ns sim.core
   (:require
-   [sim.udp :as udp]
+   [sim.io :as io]
    [clojure.string :as string]
    [clojure.contrib.generic.math-functions :as math]
-   [clojure.data.json :as json])
-  (:gen-class :main true))
+   [clojure.data.json :as json]))
 
 (def initial-state {
-                    :x 0
-                    :y 0
-                    :velocity 1
-                    :heading 0
-                    :heading-rate 0 })
+  :running false
+  :modules []
+  :t 0
+  })
 
+(defn add-module [state initial-state state-fn]
+  (assoc state :modules (conj (:modules state) [initial-state state-fn])))
 
-(def sim-running (atom false))
+(defn get-dt [state]
+  (- (System/currentTimeMillis) (:t state)))
 
-(defn start-sim []
-  (swap! sim-running (fn [_] true)))
+(defn update-module [module input dt]
+  (let [state (first module)
+        state-fn (second module)]
+    [(state-fn state input dt) state-fn]))
 
-(defn stop-sim []
-  (swap! sim-running (fn [_] false)))
+(defn update-fn [state input]
+  (let [dt (get-dt state)]
+    (assoc state
+      :running true
+      :modules (map #(update-module % input dt) (:modules state))
+      :t (+ (:t state) dt))))
 
+(defn serializable-state [state]
+  (assoc state :modules (map #(first %) (:modules state))))
 
-(start-sim)
-(stop-sim)
-sim-running
+(defn running? [state]
+  (:running state))
 
-(def sim-state (atom initial-state))
+(defn update! [state-atom input]
+  (swap! state-atom input))
 
+(defn loop! [state-atom io]
+  (println "starting")
+  (while (running? @state-atom)
+    (let [input (io/read-input! io)]
+      (if (nil? input) nil (swap! state-atom update-fn input))
+      (io/write-output! io (serializable-state @state-atom))
+      (println ".")))
+  (println "stopped"))
 
-(defn move [state turn dt]
-  {
-   :x (+ (:x state) (* dt (math/cos (:heading state)) (:velocity state)))
-   :y (+ (:y state) (* dt (math/sin (:heading state)) (:velocity state)))
-   :velocity (:velocity state)
-   :heading (+ (:heading state) (* dt (:heading-rate state)))
-   :heading-rate (+ turn (:heading-rate state))
-   }
-  )
-
-
-(defn update-sim! [turn dt]
-  (swap! sim-state (fn [s t d] (move s t d)) turn dt))
-
-
-(update-sim! 0.000 1)
-
-(defn parse-args [args]
-  (let [parts (string/split args #":")]
-    {
-     :recv-addr "0.0.0.0"
-     :recv-port (. Integer parseInt (nth parts 0 "49000"))
-     :send-addr (nth parts 1 "0.0.0.0")
-     :send-port (. Integer parseInt (nth parts 2 "49000"))
-     }))
-
-(parse-args "4000:0.0.0.1:300")
-
-(string/split "asd:asdf" #":")
-
-(json/write-str {"asdf" "foo"})
-
-(defn read-input [input]
-  (let [j (json/read-str input)]
-    {:turn ("state.effector.aileron" j)}
-    ))
-
-(defn write-output [state]
-  (json/write-str {
-                         "state.sensor.longitude" (:x state)
-                         "state.sensor.latitude" (:y state)
-                         "state.sensor.heading" (:heading state)
-                         "state.senson.roll" (:heading-rate state)
-                         }))
-
-(defn simple [args]
-  (let [
-        settings (parse-args args)
-        send (udp/make-send (:send-addr settings) (:send-port settings))
-        recv (udp/make-receive (:recv-port settings))]
-    (println "starting sim")
-    (while @sim-running
-      (let [in (read-input (recv))]
-        (update-sim! (:turn in) 1)
-        (write-output @sim-state)
-        (println ".")
-        ))
-    (println "stopped.")))
-
-(simple "4000:127.0.0.1:4000")
-
-(defn -main [& args]
-  (let [send (udp/make-send nil)]
-    nil))
+(defn start! [state-atom]
+  (swap! state-atom (fn [s] (assoc s :running true))))
+(defn stop! [state-atom]
+  (swap! state-atom (fn [s] (assoc s :running false))))
