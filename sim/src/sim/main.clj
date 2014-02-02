@@ -4,30 +4,16 @@
    [sim.core :as core]
    [sim.course :as course]))
 
-(comment
-  (use '[clojure.tools.namespace.repl :only (refresh)])
-  (refresh)
-)
-
 (defn add-course-module [state]
   (core/add-module state course/course-initial-state course/course-fn))
 
 (def state-atom (atom (add-course-module core/initial-state)))
 
 (defn start! []
-  (let [io (io/from-string "4001:127.0.0.1:4000" 200)]
-    (try
+    (let [a (agent [] :error-handler (fn [a e] (println "agent error" e)))]
+    (do
       (core/start! state-atom)
-      (core/loop! state-atom io)
-    (finally (io/close io)))))
-
+      (send-off a core/loop! state-atom #(io/from-string "5001:127.0.0.1:5000" 1000)))))
 
 (start!)
-(comment )
 (core/stop! state-atom)
-(comment )
-
-
-
-(defn -main [& args]
-  (println "butts"))

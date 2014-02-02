@@ -4,18 +4,17 @@
 
 (def course-initial-state
   {
-   :x 0
-   :y 0
-   :velocity 1
+   :latitude 0
+   :longitude 0
+   :velocity 0.0003
    :heading 0
    :heading-rate 0 })
 
 (defn course-fn [state turn dt]
-  (println "course-fn" state turn dt)
   {
-   :x (+ (:x state) (* dt (math/cos (:heading state)) (:velocity state)))
-   :y (+ (:y state) (* dt (math/sin (:heading state)) (:velocity state)))
+   :latitude (+ (:latitude state) (* dt (math/cos (:heading state)) (:velocity state)))
+   :longitude (+ (:longitude state) (* dt (math/sin (:heading state)) (:velocity state)))
    :velocity (:velocity state)
    :heading (+ (:heading state) (* dt (:heading-rate state)))
-   :heading-rate (+ turn (:heading-rate state))
+   :heading-rate (+ 0.000003 (if (nil? turn) 0 turn) (:heading-rate state))
    })

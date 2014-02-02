@@ -6,10 +6,10 @@
    [clojure.data.json :as json]))
 
 (def initial-state {
-  :running false
-  :modules []
-  :t 0
-  })
+                    :running false
+                    :modules []
+                    :t 0
+                    })
 
 (defn add-module [state initial-state state-fn]
   (assoc state :modules (conj (:modules state) [initial-state state-fn])))
@@ -25,12 +25,11 @@
 (defn update-fn [state input]
   (let [dt (get-dt state)]
     (assoc state
-      :running true
       :modules (map #(update-module % input dt) (:modules state))
       :t (+ (:t state) dt))))
 
 (defn serializable-state [state]
-  (assoc state :modules (map #(first %) (:modules state))))
+  (reduce conj (map #(first %) (:modules state))))
 
 (defn running? [state]
   (:running state))
@@ -38,16 +37,27 @@
 (defn update! [state-atom input]
   (swap! state-atom input))
 
-(defn loop! [state-atom io]
-  (println "starting")
-  (while (running? @state-atom)
-    (let [input (io/read-input! io)]
-      (if (nil? input) nil (swap! state-atom update-fn input))
-      (io/write-output! io (serializable-state @state-atom))
-      (println ".")))
-  (println "stopped"))
+(defn loop! [a state-atom io-fn]
+  (let [io (io-fn)]
+    (try
+      (do
+        (println "sim started")
+        (while (running? @state-atom)
+          (let [input (io/read-input! io)]
+            (swap! state-atom update-fn input)
+            (let [output (serializable-state @state-atom)]
+              (io/write-output! io output))
+            ))
+        (println "sim stopped"))
+      (catch
+        Exception e (println "sim got exception" e))
+      (finally
+       (io/close io)))))
 
 (defn start! [state-atom]
-  (swap! state-atom (fn [s] (assoc s :running true))))
+  (swap! state-atom (fn [s] (assoc s :running true :t (System/currentTimeMillis)))))
+
 (defn stop! [state-atom]
-  (swap! state-atom (fn [s] (assoc s :running false))))
+  (swap! state-atom (fn [s]
+                      (println "stop!!!!")
+                      (assoc s :running false))))
