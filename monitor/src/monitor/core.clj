@@ -101,5 +101,5 @@
 
 
 (comm-listen!)
-(comm-stop! flight-state-atom)
 (start-sketch!)
+(comm-stop! flight-state-atom)
