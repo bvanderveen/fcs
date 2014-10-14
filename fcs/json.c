@@ -1,10 +1,11 @@
 #include "json.h"
+#include <string.h>
 
 void json_write_value(yajl_gen g, yajl_val value) {
     if (YAJL_IS_STRING(value)) {
-        char *s = YAJL_GET_STRING(value);
+        const char *s = YAJL_GET_STRING(value);
         // grrrrr schlemiel
-        yajl_gen_string(g, s, strlen(s));
+        yajl_gen_string(g, (unsigned char *)s, strlen(s));
     }
     else if (YAJL_IS_INTEGER(value)) {
         yajl_gen_integer(g, YAJL_GET_INTEGER(value));
@@ -27,7 +28,7 @@ void json_write_value(yajl_gen g, yajl_val value) {
         int len = YAJL_GET_OBJECT(value)->len;
         for (int i = 0; i < len; i++) {
             const char *k = YAJL_GET_OBJECT(value)->keys[i];
-            yajl_gen_string(g, k, strlen(k));
+            yajl_gen_string(g, (unsigned char *)k, strlen(k));
             json_write_value(g, YAJL_GET_OBJECT(value)->values[i]);
         }
 

@@ -1,6 +1,8 @@
 #include "json_socket.h"
+#include "../debug.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "yajl/yajl_gen.h"
 
 void json_socket_udp_data_handler_function(udp_packet *p, void *context) {
@@ -72,7 +74,7 @@ void json_socket_write(json_socket *s, json_writer writer, void *context) {
     writer(g, context);
     LLog("[json_socket_write] did call write pointer\n");
 
-    char *data;
+    const unsigned char *data;
     size_t len;
     yajl_gen_get_buf(g, &data, &len);
     udp_socket_write(s->socket, data, len);

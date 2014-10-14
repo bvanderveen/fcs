@@ -1,5 +1,8 @@
 #include "message.h"
+#include "../json.h"
+#include "../debug.h"
 #include <assert.h>
+#include <string.h>
 
 void message_json_handler_function(yajl_val j, void *context) {
     state *s = context;
@@ -66,7 +69,7 @@ void message_bus_write_json(yajl_gen g, void *context) {
 
         state_value_type type = state_get_value_type(state, k);
 
-        yajl_gen_string(g, k, strlen(k));
+        yajl_gen_string(g, (unsigned char *)k, strlen(k));
 
         float float_value;
         int int_value;

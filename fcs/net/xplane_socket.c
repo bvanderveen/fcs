@@ -1,4 +1,5 @@
 #include "xplane_socket.h"
+#include "../debug.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -61,9 +62,9 @@ void xplane_socket_write(xplane_socket *s, xplane_message_data *messages, int co
     udp_socket *socket = s->socket;
 
     int bufferLength = sizeof(xplane_message_data) * count + 5;
-    char *buffer = malloc(bufferLength);
+    unsigned char *buffer = malloc(bufferLength);
     *(buffer + bufferLength) = 0;
-    char *b = buffer;
+    unsigned char *b = buffer;
 
     memcpy(buffer, "DATA\0", 5);
     b += 5;

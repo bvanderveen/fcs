@@ -36,6 +36,6 @@ udp_socket *udp_socket_alloc(udp_endpoint *listen, udp_endpoint *broadcast);
 void udp_socket_dealloc(udp_socket *s);
 
 void udp_socket_read(udp_socket *s, udp_data_handler handler, void *context);
-void udp_socket_write(udp_socket *s, char *data, int count);
+void udp_socket_write(udp_socket *s, const unsigned char *data, int count);
 
 #endif

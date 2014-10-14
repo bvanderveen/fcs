@@ -1,4 +1,5 @@
 #include "udp_socket.h"
+#include "../debug.h"
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -121,7 +122,7 @@ void udp_socket_read(udp_socket *s, udp_data_handler handler, void *context) {
     
 }
 
-void udp_socket_write(udp_socket *s, char *data, int count) {
+void udp_socket_write(udp_socket *s, const unsigned char *data, int count) {
     int bytes_sent = sendto(s->socket, data, count, 0, (struct sockaddr *)&s->broadcast->ep, sizeof(struct sockaddr_in));
 
     if (bytes_sent < 0)

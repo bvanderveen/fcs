@@ -131,7 +131,7 @@ int main() {
             udp_socket *broadcaster = udp_socket_alloc(&source_ep, &destination_ep);
 
             char *packet_data = "some data";
-            udp_socket_write(broadcaster, packet_data, 9);
+            udp_socket_write(broadcaster, (unsigned char *)packet_data, 9);
             udp_socket_read(listener, test_udp_data_handler_function, &received_packet);
 
             assert(udp_endpoint_port(received_packet->ep) == 49002);
@@ -180,10 +180,10 @@ int main() {
             udp_socket *raw = udp_socket_alloc(&any_ep, &xplane_broadcast_ep);
             udp_socket *wrapped = udp_socket_alloc(&xplane_broadcast_ep, &any_ep);
             xplane_socket *xplane_sock = xplane_socket_alloc(wrapped);
-            char *xplane_data_bytes = malloc(5 + sizeof(xplane_message_data));
+            unsigned char *xplane_data_bytes = malloc(5 + sizeof(xplane_message_data));
             
             {
-                char *p = xplane_data_bytes;
+                unsigned char *p = xplane_data_bytes;
 
                 memcpy(p, "DATA\0", 5);
                 p += 5;
@@ -249,11 +249,11 @@ int main() {
             LLog("4\n");
             xplane_socket *xplane_sock = xplane_socket_alloc(wrapped);
             LLog("5\n");
-            char *xplane_data_bytes = malloc(5 + sizeof(xplane_message_data) * 3);
+            unsigned char *xplane_data_bytes = malloc(5 + sizeof(xplane_message_data) * 3);
             LLog("6\n");
 
             {
-                char *p = xplane_data_bytes;
+                unsigned char *p = xplane_data_bytes;
 
                 memcpy(p, "DATA\0", 5);
                 p += 5;
@@ -363,7 +363,7 @@ int main() {
 
                 LLog("len = %d", strlen(json2));
 
-                udp_socket_write(raw, json2, strlen(json2));
+                udp_socket_write(raw, (unsigned char *)json2, strlen(json2));
             
                 message_bus_read_json(json_sock, state);
             
@@ -424,7 +424,7 @@ int main() {
                     "\"state.output.values\":[\"an_int\", \"a_float\", \"some_waypoints\", \"some_dict\"]"\
                     "}";
 
-                udp_socket_write(raw, json, strlen(json));
+                udp_socket_write(raw, (unsigned char *)json, strlen(json));
                 message_bus_read_json(json_sock, state);
 
                 message_bus_write_values(json_sock, state);
@@ -440,6 +440,21 @@ int main() {
             udp_socket_dealloc(raw);
             json_socket_dealloc(json_sock);
             state_dealloc(state);
+        });
+    }
+
+    TEST_GROUP("core") 
+    {
+        IT_SHOULD("call all callbacks", {
+
+        });
+
+        IT_SHOULD("return t1 > t0", {
+
+        });
+
+        IT_SHOULD("fly the airplane", {
+            
         });
     }
 }
