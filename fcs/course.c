@@ -5,21 +5,25 @@
 
 #define EARTH_RADIUS (6373.0)
 
-float course_sigma(fcs_course_setting *setting, float cross_track_error) {
+void course_settings_from_state(fcs_course_settings *settings, state *state) {
+
+}
+
+float course_sigma(fcs_course_settings *settings, float cross_track_error) {
     float exponent = expf(-1 * setting->intercept_gain * cross_track_error / 2);
     return TO_RADIANS(setting->intercept_angle) * ((exponent - 1) / (exponent + 1));
 }
 
-float course_sigma_derivative(fcs_course_setting *setting, float cross_track_error) {
-    float exponent = expf(-1 * setting->intercept_gain * cross_track_error / 2);
+float course_sigma_derivative(fcs_course_settings *settings, float cross_track_error) {
+    float exponent = expf(-1 * settings->intercept_gain * cross_track_error / 2);
     float exponent_plus_1 = exponent + 1;
-    return -1 * setting->intercept_gain * TO_RADIANS(setting->intercept_angle) * exponent / (exponent_plus_1 * exponent_plus_1);
+    return -1 * settings->intercept_gain * TO_RADIANS(settings->intercept_angle) * exponent / (exponent_plus_1 * exponent_plus_1);
 }
 
-float course_change(fcs_course_setting *setting, float relative_course, float cross_track_error, float dt) {
-    float sigma = course_sigma(setting, cross_track_error);
+float course_change(fcs_course_state *state, fcs_course_settings *settings, float relative_course, float cross_track_error, float dt) {
+    float sigma = course_sigma(settings, cross_track_error);
     float error = sigma - relative_course;
-    setting->course_integral += error * dt;
+    state->course_integral += error * dt;
     float sigma_derivative = course_sigma_derivative(setting, cross_track_error);
     float sin_relative_course = sin(relative_course);
     float p = setting->course_p * error;
@@ -39,15 +43,15 @@ float course_change(fcs_course_setting *setting, float relative_course, float cr
     return result;
 }
 
-float course_control_roll(fcs_course_setting *setting, float current_roll, float commanded_roll, float dt) {
+float course_control_roll(fcs_course_state *state, fcs_course_settings *settings, float current_roll, float commanded_roll, float dt) {
     float roll_error = commanded_roll - current_roll;
-    pid_update(&setting->aileron_controller, roll_error, dt);
-    return setting->aileron_controller.output;
+        pid_update(&state->aileron_controller, roll_error, settings->aileron_kp, settings->aileron_ki, settings->aileron_kd, dt);
+    return state->aileron_controller.output;
 }
 
-float course_bank_angle(fcs_course_setting *setting, float course_change) {
-    return atan(setting->bank_gain * course_change) / (M_PI / 2)
-    * TO_RADIANS(setting->bank_angle);
+float course_bank_angle(fcs_course_settings *settings, float course_change) {
+    return atan(settings->bank_gain * course_change) / (M_PI / 2)
+    * TO_RADIANS(settings->bank_angle);
 }
 
 float initial_bearing_between(geopoint *p0, geopoint *p1) {
@@ -85,22 +89,22 @@ float relative_bearing(float h0, float h1) {
     return normalize_bearing(h1 - h0);
 }
 
-void follow_segment(core_context *context, fcs_course_setting *setting, geopoint *p0, geopoint *p1, geopoint *r, float dt) {
-    float current_course = TO_RADIANS(context->sensor_state.heading);
+float follow_segment(fcs_course_state *state, fcs_course_settings *settings, float heading, float roll, geopoint *p0, geopoint *p1, geopoint *r, float dt) {
+    float current_course = TO_RADIANS(heading);
     float desired_course = fmod(initial_bearing_between(p0, p1) + M_PI * 2, M_PI * 2);
     float relative_course = relative_bearing(current_course, desired_course);
 
     float cross_track_error = cross_track_distance(p0, p1, r);
 
 
-    float course_signal = course_change(setting, -relative_course, cross_track_error, dt);
+    float course_signal = course_change(settings, -relative_course, cross_track_error, dt);
         ///* + d_desired_course / dt */;
 
 
-    float commanded_bank_angle = course_bank_angle(setting, course_signal);
+    float commanded_bank_angle = course_bank_angle(settings, course_signal);
 
-    float current_roll = TO_RADIANS(context->sensor_state.roll);
-    float aileron_signal = course_control_roll(setting, current_roll, commanded_bank_angle, dt);
+    float current_roll = TO_RADIANS(roll);
+    float aileron_signal = course_control_roll(state, current_roll, commanded_bank_angle, dt);
 
     
     // printf("cross_track_error (km) = %f\n", cross_track_error);
@@ -110,40 +114,41 @@ void follow_segment(core_context *context, fcs_course_setting *setting, geopoint
     // printf("commanded_bank_angle (deg) = %f\n", TO_DEGREES(commanded_bank_angle));
     // printf("current bank angle (deg) = %f\n", TO_DEGREES(current_roll));
 
-    context->effector_state.ail = -aileron_signal;
+    return -aileron_signal;
 }
 
-void core_course_setting_update(core_context *context, void *course_setting, float dt) {
-    fcs_course_setting *setting = (fcs_course_setting *)course_setting;
+float core_course_setting_update(fcs_course_state *state, fcs_course_settings *settings, fcs_course_inputs *inputs, float dt) {
+    geopoint current_position = inputs->current_position;
+    float heading = inputs->heading;
+    float roll = inputs->roll;
 
-    geopoint current_waypoint = setting->waypoints[setting->current_waypoint_index];
-    geopoint current_position = { .lat = context->sensor_state.lat, .lon = context->sensor_state.lon };
+    geopoint current_waypoint = settings->waypoints[state->current_waypoint_index];
 
     // if distance to next waypoint less than threshold, set next course
     float waypoint_distance_squared = distance_squared(&current_waypoint, &current_position);
 
-    if (waypoint_distance_squared < setting->waypoint_threshold) {
-        setting->current_waypoint_index++;
+    if (waypoint_distance_squared < settings->waypoint_threshold) {
+        state->current_waypoint_index++;
 
         // if course is finished, head back toward first waypoint
-        if (setting->current_waypoint_index == setting->waypoint_count) {
-            setting->current_waypoint_index = 0;
+        if (state->current_waypoint_index == settings->waypoint_count) {
+            state->current_waypoint_index = 0;
         }
 
-        current_waypoint = setting->waypoints[setting->current_waypoint_index];
+        current_waypoint = settings->waypoints[state->current_waypoint_index];
         printf("moving to next waypoint\n");
     }
 
-    int previous_waypoint_index = setting->current_waypoint_index == 0 ? 
-        (setting->waypoint_count - 1) : 
-        (setting->current_waypoint_index - 1);
+    int previous_waypoint_index = state->current_waypoint_index == 0 ? 
+        (settings->waypoint_count - 1) : 
+        (state->current_waypoint_index - 1);
 
-    geopoint previous_waypoint = setting->waypoints[previous_waypoint_index];
+    geopoint previous_waypoint = settings->waypoints[previous_waypoint_index];
 
-    printf("waypoint_distance_squared (%f) %f \n", setting->waypoint_threshold, waypoint_distance_squared);
-    printf("current_waypoint_index %d\n", setting->current_waypoint_index);
+    printf("waypoint_distance_squared (%f) %f \n", settings->waypoint_threshold, waypoint_distance_squared);
+    printf("current_waypoint_index %d\n", settings->current_waypoint_index);
     printf("previous_waypoint_index %d\n", previous_waypoint_index);
 
     // fly course
-    follow_segment(context, setting, &previous_waypoint, &current_waypoint, &current_position, dt);
+    return follow_segment(state, settings, heading, roll, &previous_waypoint, &current_waypoint, &current_position, dt);
 }

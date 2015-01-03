@@ -29,7 +29,7 @@ System maintains a state singleton in memory that can be read or written to over
 
 ## Setting system state
 
-Configure it to listen on a port (dig in source for now).
+The system listens on UDP port 46864, and broadcasts on port 46865
 
 Huck UDP packets of JSON at that port. For example, you could just hook a joystick to it:
 
@@ -42,13 +42,11 @@ Huck UDP packets of JSON at that port. For example, you could just hook a joysti
  
 ## Getting system values
 
-There are some special values that control the output behavior. You can select a UDP destination and port, and specify the values you want to see output.
+There is a special key that allows specifies which values should be sent over UDP.
 
     {
-      "state.output.destination.ip": "192.168.0.1",
-      "state.output.destination.port": 34231,
       "state.output.values": [ "state.sensor.latitude", "state.sensor.longitude" ]
     }
 
-For a list of names see `state.h`. JSON typed values are not broadcast. Each broadcast packet is a 32-bit float representing a value named in `state.output.values`, in corresponding order.
+For a list of names see `state.h`. Each broadcast packet is a 32-bit float representing a value named in `state.output.values`, in corresponding order.
 

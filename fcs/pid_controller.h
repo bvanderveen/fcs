@@ -1,16 +1,11 @@
 #ifndef __FCS_PID_CONTROLLER
 #define __FCS_PID_CONTROLLER
 
-struct pid_controller {
-    float 
-    setpoint,
-    output,
-    error,
-    integral,
-    p, i, d;
+struct pid_state {
+    float error, integral;
 };
-typedef struct pid_controller pid_controller;
+typedef struct pid_state pid_state;
 
-void pid_update(pid_controller *controller, float feedback, float dt);
+float pid_update(pid_state *state, float error, float kp, float ki, float kd, float dt);
 
 #endif
