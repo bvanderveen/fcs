@@ -10,12 +10,16 @@ struct xplane_message_header
 };
 typedef struct xplane_message_header xplane_message_header;
 
+#define XPLANE_MESSAGE_HEADER_SIZE 5
+
 struct xplane_message_data
 {
     uint32_t index;
     float data[8];
 };
 typedef struct xplane_message_data xplane_message_data;
+
+#define XPLANE_MESSAGE_DATA_SIZE (9 * sizeof(uint32_t))
 
 typedef void(*xplane_data_handler)(xplane_message_data *, int, void *);
 

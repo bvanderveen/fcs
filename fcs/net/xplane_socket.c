@@ -13,27 +13,8 @@ void xplane_udp_data_handler_function(udp_packet *p, void *context) {
     header = (xplane_message_header *)p->data;
 
     if (strncmp(header->code, "DATA", 4) == 0) {
-        int data_count = (p->count - 5) / sizeof(xplane_message_data);
-
-        LLog("[xplane_udp_data_handler_function] 1\n");
-        xplane_message_data *data = malloc(sizeof(xplane_message_data) * data_count);
-        LLog("[xplane_udp_data_handler_function] 2\n");
-
-        for (int i = 0; i < data_count; i++) {
-            char *b = p->data + 5 + (sizeof(xplane_message_data) * i);
-
-            xplane_message_data *data_message = &data[i];
-
-            data_message->index = (uint32_t)(*b);
-            memcpy(data_message->data, b + sizeof(uint32_t), sizeof(float) * 8);
-        }
-
-        LLog("[xplane_udp_data_handler_function] handler = %x\n", (unsigned int)handler);
-        handler(data, data_count, ctx);
-        LLog("[xplane_udp_data_handler_function] 4\n");
-
-        free(data);
-        LLog("[xplane_udp_data_handler_function] 5\n");
+        int data_count = (p->count - XPLANE_MESSAGE_HEADER_SIZE) / XPLANE_MESSAGE_DATA_SIZE;
+        handler((xplane_message_data *)&p->data[5], data_count, ctx);
     }
     else {
         LLog("[xplane_socket] discarding bogus message\n");
@@ -41,7 +22,7 @@ void xplane_udp_data_handler_function(udp_packet *p, void *context) {
 }
 
 xplane_socket *xplane_socket_alloc(udp_socket *s) {
-    xplane_socket *result = malloc(sizeof(xplane_socket));
+    xplane_socket *result = calloc(1, sizeof(xplane_socket));
     result->socket = s;
     return result;
 }
@@ -53,15 +34,13 @@ void xplane_socket_dealloc(xplane_socket *s) {
 void xplane_socket_read(xplane_socket *s, xplane_data_handler handler, void *context) {
     s->handler = handler;
     s->context = context;
-    LLog("[xplane_socket_read] will call udp_socket_read\n");
     udp_socket_read(s->socket, xplane_udp_data_handler_function, s);
-    LLog("[xplane_socket_read] did call udp_socket_read\n");
 }
 
 void xplane_socket_write(xplane_socket *s, xplane_message_data *messages, int count) {
     udp_socket *socket = s->socket;
 
-    int bufferLength = sizeof(xplane_message_data) * count + 5;
+    int bufferLength = XPLANE_MESSAGE_DATA_SIZE * count + XPLANE_MESSAGE_HEADER_SIZE;
     unsigned char *buffer = malloc(bufferLength);
     *(buffer + bufferLength) = 0;
     unsigned char *b = buffer;
@@ -79,7 +58,7 @@ void xplane_socket_write(xplane_socket *s, xplane_message_data *messages, int co
             
             // xplane seems to crash if it gets NaN
             if (value != value) {
-                LLog("got NaN, ignoring\n");
+                LLog("[xplane_socket_write] got NaN, ignoring\n");
                 value = 0;
 
             }

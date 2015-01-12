@@ -61,8 +61,9 @@ int udp_endpoint_socket(udp_endpoint *endpoint) {
         return -1;
     }
 
-    if (bind(result, (const struct sockaddr *)endpoint, sizeof(struct sockaddr_in)) == -1) {
-
+    const struct sockaddr *bind_addr = (const struct sockaddr *)&endpoint->ep;
+    if (bind(result, bind_addr, sizeof(struct sockaddr_in)) == -1) {
+        close(result);
         LLog("[udp_socket] failed to bind socket: errno %d\n", errno);
         return -1;
     }
@@ -71,23 +72,27 @@ int udp_endpoint_socket(udp_endpoint *endpoint) {
 }
 
 udp_socket *udp_socket_alloc(udp_endpoint *listen, udp_endpoint *broadcast) {
-    udp_socket *result = malloc(sizeof(udp_socket));
     int socket = udp_endpoint_socket(listen);
     
-    if(socket == -1) {
-        free(result);
+    if (socket == -1) {
         LLog("[udp_socket] failed to initialize socket\n");
         return NULL;
     }
 
-    result->socket = socket;
-    result->broadcast = broadcast;
+    udp_socket *result = calloc(1, sizeof(udp_socket));
 
+    result->socket = socket;
+
+    udp_endpoint *ep = calloc(1, sizeof(udp_endpoint));
+    memcpy(ep, broadcast, sizeof(udp_endpoint));
+
+    result->broadcast = ep;
     return result;
 }
 
 void udp_socket_dealloc(udp_socket *s) {
     close(s->socket);
+    free(s->broadcast);
     free(s);
 }
 
@@ -97,11 +102,7 @@ void udp_socket_read(udp_socket *s, udp_data_handler handler, void *context) {
     struct sockaddr_in peer_endpoint;
     size_t peer_endpoint_length = sizeof(peer_endpoint);
 
-    LLog("[udp_socket_read] will recvfrom\n");
-
-    int bytes_read = recvfrom(s->socket, buffer, buffer_length, 0, (struct sockaddr *)&peer_endpoint, (socklen_t *)&peer_endpoint_length);
-
-    LLog("[udp_socket_read] did recvfrom\n");
+    int bytes_read = recvfrom(s->socket, &buffer, buffer_length, 0, (struct sockaddr *)&peer_endpoint, (socklen_t *)&peer_endpoint_length);
 
     if (bytes_read == -1) {
         LLog("[udp_socket] recvfrom failed: errno %d\n", errno);
@@ -116,16 +117,18 @@ void udp_socket_read(udp_socket *s, udp_data_handler handler, void *context) {
     packet.data = (char *)&buffer;
     packet.count = bytes_read;
 
-    LLog("[udp_socket_read] will call handler\n");
     handler(&packet, context);
-    LLog("[udp_socket_read] did call handler\n");
-    
 }
 
 void udp_socket_write(udp_socket *s, const unsigned char *data, int count) {
-    int bytes_sent = sendto(s->socket, data, count, 0, (struct sockaddr *)&s->broadcast->ep, sizeof(struct sockaddr_in));
+    udp_endpoint *broadcast_ep = s->broadcast;
+    struct sockaddr *broadcast_addr = &broadcast_ep->ep;
+    int socket = s->socket;
 
-    if (bytes_sent < 0)
-        LLog("[udp_socket] sendto failed: errno %d\n", errno);
+    int bytes_sent = sendto(socket, data, count, 0, broadcast_addr, sizeof(struct sockaddr_in));
+
+    if (bytes_sent < 0) {
+        LLog("[udp_socket] sendto returned %d: errno %d\n", bytes_sent, errno);
+    }
 }
 

@@ -10,17 +10,12 @@ void json_socket_udp_data_handler_function(udp_packet *p, void *context) {
     json_handler handler = s->handler;
     void *ctx = s->context;
 
-    LLog("[json_socket_udp_data_handler_function] got data count %d\n", p->count);
-    LLog("[json_socket_udp_data_handler_function] will parse json\n");
-
     size_t error_buffer_len = sizeof(char) * 2048;
     char *error_buffer = malloc(error_buffer_len);
 
     char *parse_buffer = malloc(p->count + 1);
     memcpy(parse_buffer, p->data, p->count);
     parse_buffer[p->count] = '\0';
-
-    LLog("[json_socket_udp_data_handler_function] got data\n%s\n", parse_buffer);
 
 
     // XXX buffer overflow waiting to happen
@@ -34,11 +29,7 @@ void json_socket_udp_data_handler_function(udp_packet *p, void *context) {
 
     free(error_buffer);
 
-    LLog("[json_socket_udp_data_handler_function] did parse json, value = %d\n", (unsigned int)v);
-
-    LLog("[json_socket_udp_data_handler_function] will call handler = %x\n", (unsigned int)handler);
     handler(v, ctx);
-    LLog("[json_socket_udp_data_handler_function] did call handler = %x\n", (unsigned int)handler);
 
     // XXX memory leak
     //free(v);
@@ -60,19 +51,13 @@ void json_socket_read(json_socket *s, json_handler handler, void *context) {
     s->handler = handler;
     s->context = context;
 
-    LLog("[json_socket_read] will call udp_socket_read handler = %x, context = %x\n", (unsigned int)handler, (unsigned int)context);
     udp_socket_read(s->socket, json_socket_udp_data_handler_function, s);
-    LLog("[json_socket_read] did call udp_socket_read\n");
 }
 
 void json_socket_write(json_socket *s, json_writer writer, void *context) {
-    LLog("[json_socket_write] will allocate\n");
     yajl_gen g = yajl_gen_alloc(NULL);
-    LLog("[json_socket_write] did allocate\n");
 
-    LLog("[json_socket_write] will call write pointer\n");
     writer(g, context);
-    LLog("[json_socket_write] did call write pointer\n");
 
     const unsigned char *data;
     size_t len;

@@ -28,8 +28,8 @@ void test_udp_data_handler_function(udp_packet *p, void *context) {
 void test_xplane_data_handler_function(xplane_message_data *ms, int count, void *context) {
     xplane_message_data *messages = context;
 
-    memcpy(&messages[0], &ms[0], sizeof(xplane_message_data));
-    memcpy(&messages[1], &ms[1], sizeof(xplane_message_data));
+    memcpy(&messages[0], &ms[0], XPLANE_MESSAGE_DATA_SIZE);
+    memcpy(&messages[1], &ms[1], XPLANE_MESSAGE_DATA_SIZE);
 }
 
 void test_json_handler_function(yajl_val j, void *context) {
@@ -37,7 +37,7 @@ void test_json_handler_function(yajl_val j, void *context) {
     *json = j;
 }
 
-int main() {
+void test() {
 
     udp_endpoint xplane_listen_ep;
     udp_endpoint_init(&xplane_listen_ep, INADDR_ANY, 49000);
@@ -157,17 +157,19 @@ int main() {
             xplane_socket *xplane_sock = xplane_socket_alloc(wrapped);
 
             {
-                xplane_socket_write(xplane_sock, fake_xplane_data, 2);
+                xplane_socket_write(xplane_sock, &fake_xplane_data[0], 2);
 
                 udp_socket_read(raw, &test_udp_data_handler_function, &received_packet);
 
                 assert(strncmp(received_packet->data, "DATA\0", 5) == 0);
 
                 xplane_message_data *data0 = (xplane_message_data *)(received_packet->data + 5);
-                xplane_message_data *data1 = (xplane_message_data *)(received_packet->data + 5 + sizeof(xplane_message_data));
+                xplane_message_data *data1 = (xplane_message_data *)(received_packet->data + 5 + XPLANE_MESSAGE_DATA_SIZE);
                 
                 assert(data0->index == 1);
+                assert_float(data0->data[0], .1);
                 assert(data1->index == 2);
+                assert_float(data1->data[0], .8);
             }
 
             udp_socket_dealloc(wrapped);
@@ -176,24 +178,24 @@ int main() {
         });
 
         IT_SHOULD("receive data from xplane", {
-            received_messages = malloc(sizeof(xplane_message_data) * 2);
+            received_messages = calloc(2, XPLANE_MESSAGE_DATA_SIZE);
+            unsigned char *xplane_data_bytes = malloc(XPLANE_MESSAGE_HEADER_SIZE + 2 * XPLANE_MESSAGE_DATA_SIZE);
             udp_socket *raw = udp_socket_alloc(&any_ep, &xplane_broadcast_ep);
             udp_socket *wrapped = udp_socket_alloc(&xplane_broadcast_ep, &any_ep);
             xplane_socket *xplane_sock = xplane_socket_alloc(wrapped);
-            unsigned char *xplane_data_bytes = malloc(5 + sizeof(xplane_message_data));
             
             {
-                unsigned char *p = xplane_data_bytes;
+                unsigned char *p = &xplane_data_bytes[0];
 
                 memcpy(p, "DATA\0", 5);
                 p += 5;
 
-                memcpy(p, &fake_xplane_data[0], sizeof(xplane_message_data));
-                p += sizeof(xplane_message_data);
+                memcpy(p, &fake_xplane_data[0], XPLANE_MESSAGE_DATA_SIZE);
+                p += XPLANE_MESSAGE_DATA_SIZE;
 
-                memcpy(p, &fake_xplane_data[1], sizeof(xplane_message_data));
+                memcpy(p, &fake_xplane_data[1], XPLANE_MESSAGE_DATA_SIZE);
 
-                udp_socket_write(raw, xplane_data_bytes, (sizeof(xplane_message_data) * 2 + 5));
+                udp_socket_write(raw, &xplane_data_bytes[0], (XPLANE_MESSAGE_DATA_SIZE * 2 + XPLANE_MESSAGE_HEADER_SIZE));
 
                 xplane_socket_read(xplane_sock, &test_xplane_data_handler_function, received_messages);
 
@@ -240,17 +242,11 @@ int main() {
         };
 
         IT_SHOULD("read sensors from xplane to state", {
-            LLog("1\n");
             state *state = state_alloc(13);
-            LLog("2\n");
             udp_socket *raw = udp_socket_alloc(&any_ep, &xplane_broadcast_ep);
-            LLog("3\n");
             udp_socket *wrapped = udp_socket_alloc(&xplane_broadcast_ep, &any_ep);
-            LLog("4\n");
             xplane_socket *xplane_sock = xplane_socket_alloc(wrapped);
-            LLog("5\n");
-            unsigned char *xplane_data_bytes = malloc(5 + sizeof(xplane_message_data) * 3);
-            LLog("6\n");
+            unsigned char *xplane_data_bytes = malloc(XPLANE_MESSAGE_HEADER_SIZE + XPLANE_MESSAGE_DATA_SIZE * 3);
 
             {
                 unsigned char *p = xplane_data_bytes;
@@ -258,20 +254,17 @@ int main() {
                 memcpy(p, "DATA\0", 5);
                 p += 5;
 
-                memcpy(p, &mock_xplane_data[0], sizeof(xplane_message_data));
-                p += sizeof(xplane_message_data);
+                memcpy(p, &mock_xplane_data[0], XPLANE_MESSAGE_DATA_SIZE);
+                p += XPLANE_MESSAGE_DATA_SIZE;
 
-                memcpy(p, &mock_xplane_data[1], sizeof(xplane_message_data));
-                p += sizeof(xplane_message_data);
+                memcpy(p, &mock_xplane_data[1], XPLANE_MESSAGE_DATA_SIZE);
+                p += XPLANE_MESSAGE_DATA_SIZE;
 
-                memcpy(p, &mock_xplane_data[2], sizeof(xplane_message_data));
+                memcpy(p, &mock_xplane_data[2], XPLANE_MESSAGE_DATA_SIZE);
 
-                LLog("1\n");
-                udp_socket_write(raw, xplane_data_bytes, sizeof(xplane_message_data) * 3 + 5);
-                LLog("2\n");
+                udp_socket_write(raw, xplane_data_bytes, XPLANE_MESSAGE_HEADER_SIZE + XPLANE_MESSAGE_DATA_SIZE * 3);
 
                 xplane_bus_read_sensors(xplane_sock, state);
-                LLog("3\n");
 
                 assert_float(state_get_float(state, STATE_SENSOR_PITCH), .9);
                 assert_float(state_get_float(state, STATE_SENSOR_ROLL), .8);
@@ -286,17 +279,11 @@ int main() {
                 assert_float(state_get_float(state, STATE_SENSOR_ACCEL_B), .1);
             }
 
-            LLog("7\n");
             udp_socket_dealloc(wrapped);
-            LLog("8\n");
             udp_socket_dealloc(raw);
-            LLog("9\n");
             xplane_socket_dealloc(xplane_sock);
-            LLog("10\n");
             state_dealloc(state);
-            LLog("11\n");
             free(xplane_data_bytes);
-            LLog("12\n");
         });
 
         IT_SHOULD("write effectors from state to xplane", {
@@ -360,8 +347,6 @@ int main() {
                     "\"a_boolean_false\":false," \
                     "\"some_waypoints\":[[-122.2, 47.7],[-122.25, 47.75]]"\
                     "}";
-
-                LLog("len = %d", strlen(json2));
 
                 udp_socket_write(raw, (unsigned char *)json2, strlen(json2));
             
@@ -443,18 +428,25 @@ int main() {
         });
     }
 
-    TEST_GROUP("core") 
-    {
-        IT_SHOULD("call all callbacks", {
+    // TEST_GROUP("core") 
+    // {
+    //     IT_SHOULD("call all callbacks", {
 
-        });
+    //     });
 
-        IT_SHOULD("return t1 > t0", {
+    //     IT_SHOULD("return t1 > t0", {
 
-        });
+    //     });
 
-        IT_SHOULD("fly the airplane", {
+    //     IT_SHOULD("fly the airplane", {
             
-        });
+    //     });
+    // }
+}
+
+int main() {
+    for (int i = 0; i < 1000; i++) {
+        printf("------------------\n");
+        test();
     }
 }
