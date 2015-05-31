@@ -11,6 +11,7 @@ fcs-main: yajl-static
 	fcs/net/udp_socket.c \
 	fcs/net/json_socket.c \
 	fcs/net/xplane_socket.c \
+	fcs/net/hxstream.c \
 	fcs/bus/xplane.c \
 	fcs/bus/message.c \
 	main.c
@@ -26,6 +27,7 @@ fcs-test: yajl-static
 	fcs/net/udp_socket.c \
 	fcs/net/json_socket.c \
 	fcs/net/xplane_socket.c \
+	fcs/net/hxstream.c \
 	fcs/bus/xplane.c \
 	fcs/bus/message.c \
 	tests.c

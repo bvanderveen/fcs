@@ -2,6 +2,7 @@
 #include "fcs/net/udp_socket.h"
 #include "fcs/net/json_socket.h"
 #include "fcs/net/xplane_socket.h"
+#include "fcs/net/hxstream.h"
 #include "fcs/bus/xplane.h"
 #include "fcs/bus/message.h"
 #include "fcs/debug.h"
@@ -10,6 +11,18 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
+
+typedef enum {
+    hx_stream_callback_type_start,
+    hx_stream_callback_type_tag,
+    hx_stream_callback_type_data,
+}
+hx_stream_callback_type;
+
+typedef struct {
+    hx_stream_callback_type type;
+    uint8_t data;
+} hx_stream_callback_info;
 
 #define TEST_GROUP(T) {printf("\033[1;36m--- " T "\033[0m\n");}
 #define IT_SHOULD(WHAT, HOW) { \
@@ -35,6 +48,35 @@ void test_xplane_data_handler_function(xplane_message_data *ms, int count, void 
 void test_json_handler_function(yajl_val j, void *context) {
     yajl_val *json = context;
     *json = j;
+}
+
+void test_hx_stream_decoder_frame_start_callback(void *context) {
+    hx_stream_callback_info info = {
+        .type = hx_stream_callback_type_start,
+    };
+
+    hx_stream_callback_info *infoContext = (hx_stream_callback_info *)context;
+    *infoContext = info;
+}
+
+void test_hx_stream_decoder_frame_tag_callback(void *context, uint8_t tag) {
+    hx_stream_callback_info info = {
+        .type = hx_stream_callback_type_tag,
+        .data = tag
+    };
+
+    hx_stream_callback_info *infoContext = (hx_stream_callback_info *)context;
+    *infoContext = info;
+}
+
+void test_hx_stream_decoder_frame_data_callback(void *context, uint8_t data) {
+    hx_stream_callback_info info = {
+        .type = hx_stream_callback_type_data,
+        .data = data
+    };
+
+    hx_stream_callback_info *infoContext = (hx_stream_callback_info *)context;
+    *infoContext = info;
 }
 
 void test() {
@@ -428,6 +470,84 @@ void test() {
         });
     }
 
+    TEST_GROUP("hxstream")
+    {
+        IT_SHOULD("encode data", {
+            void *sample_data = "hello world";
+            size_t sample_data_length = 11;
+            uint8_t tag = 0x7f;
+
+            size_t output_length;
+            const char *output = hx_stream_encode_frame(sample_data, sample_data_length, tag, &output_length);
+
+            assert(output[0] == 0x7e);
+            assert(output[1] == 0x7f);
+            assert(strncmp(&output[2], "hello world", 11) == 0);
+            assert(output_length == 13);
+        });
+
+        IT_SHOULD("parse data", {
+            hx_stream_decoder_delegate *delegate = calloc(sizeof(hx_stream_decoder_delegate), 1);
+
+            delegate->on_start = test_hx_stream_decoder_frame_start_callback;
+            delegate->on_tag = test_hx_stream_decoder_frame_tag_callback;
+            delegate->on_data = test_hx_stream_decoder_frame_data_callback;
+
+            hx_stream_decoder *decoder = hx_stream_decoder_init(delegate);
+
+            char *data_string = "  hello  world     ";
+
+            int length = strlen(data_string);
+            uint8_t *data = malloc(strlen(data_string));
+            memcpy(data, data_string, length);
+
+            uint8_t escape_octet = 0x7c;
+            data[0] = 0x7e;
+            data[1] = 0x42;
+            data[7] = escape_octet;
+            data[8] = 0x7e ^ 0x20; // escaped frame boundary char in data
+            data[14] = 0x7e;
+            data[15] = 0x7e;
+            data[16] = 0x01;
+            data[17] = escape_octet;
+            data[18] = escape_octet ^ 0x20;
+
+            hx_stream_callback_info callbackInfo[length];
+
+            for (int i = 0; i < length; i++) {
+                hx_stream_decoder_execute(decoder, &data[i], &callbackInfo[i]);
+            }
+
+            hx_stream_decoder_dealloc(decoder);
+
+            assert(callbackInfo[0].type == hx_stream_callback_type_start);
+            assert(callbackInfo[1].type == hx_stream_callback_type_tag);
+            assert(callbackInfo[1].data == 0x42);
+            assert(callbackInfo[2].type == hx_stream_callback_type_data);
+            assert(callbackInfo[2].data == 'h');
+            assert(callbackInfo[3].data == 'e');
+            assert(callbackInfo[4].data == 'l');
+            assert(callbackInfo[5].data == 'l');
+            assert(callbackInfo[6].data == 'o');
+            // index 7 contains the escape char and thus didn't generate a callback
+            assert(callbackInfo[8].data == 0x7e);
+            assert(callbackInfo[9].data == 'w');
+            assert(callbackInfo[10].data == 'o');
+            assert(callbackInfo[11].data == 'r');
+            assert(callbackInfo[12].data == 'l');
+            assert(callbackInfo[13].data == 'd');
+            assert(callbackInfo[14].type == hx_stream_callback_type_start);
+            assert(callbackInfo[15].type == hx_stream_callback_type_start);
+            assert(callbackInfo[16].type == hx_stream_callback_type_tag);
+            assert(callbackInfo[16].data == 0x01);
+            // index 17 contains the escape char and thus didn't generate a callback
+            assert(callbackInfo[18].data == escape_octet);
+
+            free(data);
+            free(delegate);
+        });
+    }
+
     // TEST_GROUP("core") 
     // {
     //     IT_SHOULD("call all callbacks", {
@@ -445,7 +565,7 @@ void test() {
 }
 
 int main() {
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < 100; i++) {
         printf("------------------\n");
         test();
     }
