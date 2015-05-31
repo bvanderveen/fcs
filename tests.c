@@ -519,6 +519,8 @@ void test() {
             }
 
             hx_stream_decoder_dealloc(decoder);
+            free(data);
+            free(delegate);
 
             assert(callbackInfo[0].type == hx_stream_callback_type_start);
             assert(callbackInfo[1].type == hx_stream_callback_type_tag);
@@ -542,9 +544,6 @@ void test() {
             assert(callbackInfo[16].data == 0x01);
             // index 17 contains the escape char and thus didn't generate a callback
             assert(callbackInfo[18].data == escape_octet);
-
-            free(data);
-            free(delegate);
         });
     }
 
