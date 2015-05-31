@@ -122,7 +122,7 @@ void udp_socket_read(udp_socket *s, udp_data_handler handler, void *context) {
 
 void udp_socket_write(udp_socket *s, const unsigned char *data, int count) {
     udp_endpoint *broadcast_ep = s->broadcast;
-    struct sockaddr *broadcast_addr = &broadcast_ep->ep;
+    struct sockaddr *broadcast_addr = (struct sockaddr *)&broadcast_ep->ep;
     int socket = s->socket;
 
     int bytes_sent = sendto(socket, data, count, 0, broadcast_addr, sizeof(struct sockaddr_in));
